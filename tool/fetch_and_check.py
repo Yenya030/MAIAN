@@ -1,6 +1,8 @@
 import argparse
+import os
 import random
 import time
+from pathlib import Path
 from web3 import Web3
 
 from check_suicide import check_one_contract_on_suicide
@@ -94,8 +96,14 @@ def scan_random_contract(network: str = 'mainnet'):
     return report
 
 
-def scan_multiple_contracts(count: int, network: str = 'mainnet', *,
-                            unique: bool = True, address_file: str | None = None):
+def scan_multiple_contracts(
+    count: int,
+    network: str = 'mainnet',
+    *,
+    unique: bool = True,
+    address_file: str | None = None,
+    report_dir: str = 'reports',
+):
     """Fetch and scan ``count`` random contracts from ``network``.
 
     Parameters
@@ -108,10 +116,25 @@ def scan_multiple_contracts(count: int, network: str = 'mainnet', *,
         If ``True`` the same contract address will not be scanned twice.
     address_file:
         Optional path to store scanned addresses, one per line.
+    report_dir:
+        Directory where result files (``suicidal.txt`` etc.) will be stored.
     """
     reports = []
     seen = set()
     addresses = []
+
+    existing = set()
+    if unique and address_file and os.path.exists(address_file):
+        with open(address_file, 'r', encoding='utf-8') as fh:
+            existing = {line.strip() for line in fh if line.strip()}
+        seen.update(existing)
+
+    report_path = Path(report_dir)
+    report_path.mkdir(parents=True, exist_ok=True)
+
+    def _append(path: Path, address: str) -> None:
+        with open(path, 'a', encoding='utf-8') as fh:
+            fh.write(address + "\n")
 
     while len(reports) < count:
         report = scan_random_contract(network=network)
@@ -122,10 +145,19 @@ def scan_multiple_contracts(count: int, network: str = 'mainnet', *,
         addresses.append(addr)
         reports.append(report)
 
+        if report.get('suicidal'):
+            _append(report_path / 'suicidal.txt', addr)
+        if report.get('prodigal'):
+            _append(report_path / 'prodigal.txt', addr)
+        if report.get('greedy'):
+            _append(report_path / 'greedy.txt', addr)
+
     if address_file:
-        with open(address_file, 'w', encoding='utf-8') as fh:
+        mode = 'a' if os.path.exists(address_file) else 'w'
+        with open(address_file, mode, encoding='utf-8') as fh:
             for a in addresses:
-                fh.write(a + "\n")
+                if not unique or a not in existing:
+                    fh.write(a + "\n")
 
     return reports
 
@@ -149,6 +181,10 @@ if __name__ == '__main__':
         help='file to store scanned addresses (default: reports/scanned_addresses.txt)'
     )
     parser.add_argument(
+        '--report-dir', default='reports',
+        help='directory to store result lists (default: reports)'
+    )
+    parser.add_argument(
         '--allow-duplicates', action='store_true',
         help='allow scanning the same address more than once'
     )
@@ -159,6 +195,7 @@ if __name__ == '__main__':
         network=args.network,
         unique=not args.allow_duplicates,
         address_file=args.address_file,
+        report_dir=args.report_dir,
     )
     for i, rep in enumerate(reports, 1):
         print(f'Scan {i}:')
