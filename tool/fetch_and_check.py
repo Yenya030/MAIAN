@@ -1,3 +1,4 @@
+import argparse
 import random
 import time
 from web3 import Web3
@@ -8,7 +9,20 @@ from check_lock import check_one_contract_on_ether_lock
 from values import MyGlobals
 
 
-PROVIDER_URL = 'https://rpc.flashbots.net'
+NETWORK_PROVIDERS = {
+    'mainnet': 'https://rpc.flashbots.net',
+    # Additional networks can be added here in the future
+    'goerli': 'https://rpc.ankr.com/eth_goerli',
+    'sepolia': 'https://rpc.sepolia.org',
+}
+
+
+def get_provider_url(network: str) -> str:
+    """Return the provider URL for a given network."""
+    try:
+        return NETWORK_PROVIDERS[network]
+    except KeyError as exc:
+        raise ValueError(f'Unknown network: {network}') from exc
 
 
 def random_contract_address(w3, search_depth=1000, attempts=20):
@@ -53,8 +67,8 @@ def run_checks(bytecode, address):
     return results
 
 
-def scan_random_contract():
-    w3 = Web3(Web3.HTTPProvider(PROVIDER_URL))
+def scan_random_contract(network: str = 'mainnet'):
+    w3 = Web3(Web3.HTTPProvider(get_provider_url(network)))
     if not w3.is_connected():
         raise RuntimeError('Web3 provider not available')
 
@@ -81,7 +95,18 @@ def scan_random_contract():
 
 
 if __name__ == '__main__':
-    rep = scan_random_contract()
+    parser = argparse.ArgumentParser(
+        description='Fetch a random contract from a network and run Maian checks'
+    )
+    parser.add_argument(
+        '-n', '--network',
+        default='mainnet',
+        choices=sorted(NETWORK_PROVIDERS.keys()),
+        help='Ethereum network to use (default: mainnet)',
+    )
+    args = parser.parse_args()
+
+    rep = scan_random_contract(network=args.network)
     print('Scan report:')
     for k, v in rep.items():
         print(f'{k}: {v}')
