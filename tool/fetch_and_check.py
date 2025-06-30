@@ -94,9 +94,17 @@ def scan_random_contract(network: str = 'mainnet'):
     return report
 
 
+def scan_multiple_contracts(count: int, network: str = 'mainnet'):
+    """Fetch and scan ``count`` random contracts from ``network``."""
+    reports = []
+    for _ in range(count):
+        reports.append(scan_random_contract(network=network))
+    return reports
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Fetch a random contract from a network and run Maian checks'
+        description='Fetch random contracts from a network and run Maian checks'
     )
     parser.add_argument(
         '-n', '--network',
@@ -104,9 +112,14 @@ if __name__ == '__main__':
         choices=sorted(NETWORK_PROVIDERS.keys()),
         help='Ethereum network to use (default: mainnet)',
     )
+    parser.add_argument(
+        '-c', '--count', type=int, default=1,
+        help='number of contracts to scan (default: 1)'
+    )
     args = parser.parse_args()
 
-    rep = scan_random_contract(network=args.network)
-    print('Scan report:')
-    for k, v in rep.items():
-        print(f'{k}: {v}')
+    reports = scan_multiple_contracts(count=args.count, network=args.network)
+    for i, rep in enumerate(reports, 1):
+        print(f'Scan {i}:')
+        for k, v in rep.items():
+            print(f'  {k}: {v}')

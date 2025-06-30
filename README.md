@@ -36,13 +36,14 @@ A snapshot of one run is given below
 
 ### Automated Fetching
 
-The `fetch_and_check.py` utility can fetch a random contract directly from a
-public Ethereum node and run the Maian checks on it. By default the script
-connects to Mainnet but other networks can be selected with the `--network`
-option:
+The `fetch_and_check.py` utility can fetch one or more random contracts
+directly from a public Ethereum node and run the Maian checks on them. By
+default the script connects to Mainnet but other networks can be selected with
+the `--network` option. The number of contracts to scan is controlled with
+`--count`:
 
 ```
-$ python fetch_and_check.py --network mainnet
+$ python fetch_and_check.py --network mainnet --count 5
 ```
 
 Additional networks can be added to the tool in the future.

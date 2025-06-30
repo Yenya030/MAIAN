@@ -73,3 +73,10 @@ def test_get_provider_url_mainnet():
 def test_get_provider_url_invalid():
     with pytest.raises(ValueError):
         fetch_and_check.get_provider_url('foobar')
+
+
+def test_scan_multiple_contracts():
+    with mock.patch('fetch_and_check.scan_random_contract', return_value={'a':1}) as m:
+        res = fetch_and_check.scan_multiple_contracts(count=3, network='mainnet')
+        assert res == [{'a':1}, {'a':1}, {'a':1}]
+        assert m.call_count == 3
