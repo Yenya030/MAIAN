@@ -23,7 +23,7 @@ Additional tools:
 - `contract_stats.py` can save statistics about contracts to a CSV file. Run it with
   `--output-file <file>` to specify the destination (default `contract_stats.csv`).
   Use `--block-range <N>` to count contracts in the last `N` blocks ending at the latest block.
-  `contract_downloader.py` fetches bytecode from Etherscan and stores it in
--`contracts/contracts.jsonl`. Metadata about the stored block range and file
+- `contract_downloader.py` fetches bytecode from Etherscan and stores it in
+  `contracts/contracts.jsonl`. Metadata about the stored block range and file
   size lives in `contracts/metadata.json`.
 
