@@ -17,3 +17,7 @@ Unique scanning:
   `reports/suicidal.txt`, `reports/prodigal.txt`, and `reports/greedy.txt`.
 
 Any new scripts or modules should include simple unit tests under `tests/` and should avoid network calls during tests by using mocks.
+
+Additional tools:
+- `contract_stats.py` can now save statistics about contracts to a CSV file. Run it with
+  `--output-file <file>` to specify the destination. The default is `contract_stats.csv`.
