@@ -122,3 +122,22 @@ def test_file_data_store(tmp_path):
     assert content[1].split(',') == [
         'mainnet', '0', '0', '2', '1000', '10'
     ]
+
+
+def test_get_current_block_number(monkeypatch):
+    w3 = DummyWeb3()
+    w3.eth.block_number = 42
+
+    def fake_provider_url(network):
+        return 'http://example.com'
+
+    class DummyWeb3Class:
+        HTTPProvider = staticmethod(lambda url: None)
+
+        def __new__(cls, provider):
+            return w3
+
+    monkeypatch.setattr(contract_stats, 'get_provider_url', fake_provider_url)
+    monkeypatch.setattr(contract_stats, 'Web3', DummyWeb3Class)
+
+    assert contract_stats.get_current_block_number('mainnet') == 42
