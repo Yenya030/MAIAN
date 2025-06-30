@@ -19,5 +19,6 @@ Unique scanning:
 Any new scripts or modules should include simple unit tests under `tests/` and should avoid network calls during tests by using mocks.
 
 Additional tools:
-- `contract_stats.py` can now save statistics about contracts to a CSV file. Run it with
-  `--output-file <file>` to specify the destination. The default is `contract_stats.csv`.
+- `contract_stats.py` can save statistics about contracts to a CSV file. Run it with
+  `--output-file <file>` to specify the destination (default `contract_stats.csv`).
+  Use `--block-range <N>` to count contracts in the last `N` blocks ending at the latest block.

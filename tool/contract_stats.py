@@ -77,6 +77,14 @@ def collect_contract_addresses(w3: Web3, start_block: int = 0, end_block: int | 
     return addresses
 
 
+def get_current_block_number(network: str) -> int:
+    """Return the latest block number for the given network."""
+    w3 = Web3(Web3.HTTPProvider(get_provider_url(network)))
+    if not w3.is_connected():
+        raise RuntimeError('Web3 provider not available')
+    return w3.eth.block_number
+
+
 def count_contracts(network: str, start_block: int = 0, end_block: int | None = None):
     """Return stats about contracts in the specified block range."""
     w3 = Web3(Web3.HTTPProvider(get_provider_url(network)))
@@ -117,12 +125,23 @@ def main() -> None:
         help='block number to stop scanning at (default: latest)'
     )
     parser.add_argument(
+        '--block-range', type=int, default=None,
+        help='scan the last N blocks ending at the current block'
+    )
+    parser.add_argument(
         '--output-file', default='contract_stats.csv',
         help='CSV file to append results to (default: contract_stats.csv)'
     )
     args = parser.parse_args()
 
-    stats = count_contracts(args.network, args.start_block, args.end_block)
+    if args.block_range is not None:
+        end_block = get_current_block_number(args.network)
+        start_block = max(0, end_block - args.block_range)
+    else:
+        start_block = args.start_block
+        end_block = args.end_block
+
+    stats = count_contracts(args.network, start_block, end_block)
     for k, v in stats.items():
         print(f'{k}: {v}')
 
