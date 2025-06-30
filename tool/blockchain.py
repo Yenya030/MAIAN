@@ -1,5 +1,5 @@
 from __future__ import print_function
-from web3 import Web3, KeepAliveRPCProvider, IPCProvider
+from web3 import Web3
 import subprocess, signal
 import time
 import sys
@@ -32,10 +32,10 @@ def start_private_chain(chain,etherbase,debug=False):
 
 
 
-    if Web3(KeepAliveRPCProvider(host='127.0.0.1', port=MyGlobals.port_number)).isConnected() :
+    if Web3(Web3.HTTPProvider(f'http://127.0.0.1:{MyGlobals.port_number}')).is_connected() :
             print('\033[91m[-] Some blockchain is active, killing it... \033[0m', end='')
             kill_active_blockchain()
-            if not( Web3(KeepAliveRPCProvider(host='127.0.0.1', port=MyGlobals.port_number)).isConnected() ):
+            if not( Web3(Web3.HTTPProvider(f'http://127.0.0.1:{MyGlobals.port_number}')).is_connected() ):
                 print('\033[92m Killed \033[0m')
             else:
                 print('Cannot kill')
@@ -47,14 +47,14 @@ def start_private_chain(chain,etherbase,debug=False):
         pro = subprocess.Popen(['geth','--rpc','--rpccorsdomain','"*"','--rpcapi="db,eth,net,web3,personal,web3"', '--rpcport',MyGlobals.port_number, '--datadir','blockchains/'+chain,'--networkid','123','--mine','--minerthreads=1','--etherbase='+MyGlobals.etherbase_account],stdout=devnull, stderr=devnull)
 
     global web3
-    MyGlobals.web3 = Web3(KeepAliveRPCProvider(host='127.0.0.1', port=MyGlobals.port_number))
-    while( not MyGlobals.web3.isConnected() ):
+    MyGlobals.web3 = Web3(Web3.HTTPProvider(f'http://127.0.0.1:{MyGlobals.port_number}'))
+    while( not MyGlobals.web3.is_connected() ):
         print('',end='.')
         if MyGlobals.exec_as_script:
             sys.stdout.flush()        
         time.sleep(1)
 
-    if( MyGlobals.web3.isConnected() ):
+    if( MyGlobals.web3.is_connected() ):
         print('\033[92m ESTABLISHED \033[0m')
     else:
         print('\033[93m[-] Connection failed. Exiting\033[0m')
