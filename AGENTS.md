@@ -21,3 +21,6 @@ Any new scripts or modules should include simple unit tests under `tests/` and s
 Additional tools:
 - `contract_stats.py` can now save statistics about contracts to a CSV file. Run it with
   `--output-file <file>` to specify the destination. The default is `contract_stats.csv`.
+- `contract_downloader.py` fetches bytecode from Etherscan and stores it in
+  `contracts/contracts.jsonl`. Metadata about the stored block range and file
+  size lives in `contracts/metadata.json`.
