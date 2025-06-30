@@ -9,4 +9,9 @@ Running tests:
 - Install dependencies with `pip install web3 z3-solver`.
 - Execute the full test suite with `pytest -q` from the repository root.
 
+Unique scanning:
+- The `fetch_and_check.py` utility saves scanned contract addresses to
+  `reports/scanned_addresses.txt` by default. Duplicate addresses are skipped
+  unless the `--allow-duplicates` flag is passed.
+
 Any new scripts or modules should include simple unit tests under `tests/` and should avoid network calls during tests by using mocks.
