@@ -34,6 +34,19 @@ A snapshot of one run is given below
 
 ![](./gui-maian.png)
 
+### Automated Fetching
+
+The `fetch_and_check.py` utility can fetch a random contract directly from a
+public Ethereum node and run the Maian checks on it. By default the script
+connects to Mainnet but other networks can be selected with the `--network`
+option:
+
+```
+$ python fetch_and_check.py --network mainnet
+```
+
+Additional networks can be added to the tool in the future.
+
 ## Supported Operating Systems and Dependencies
 
 Maian should run smoothly on Linux (we've checked on Ubuntu/Mint) and MacOS. Our attempts to run it on Windows have failed. 

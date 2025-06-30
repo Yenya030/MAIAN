@@ -3,6 +3,7 @@ from unittest import mock
 
 import sys
 from pathlib import Path
+import pytest
 
 root_dir = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root_dir / 'tool'))
@@ -62,3 +63,13 @@ def test_run_checks_calls():
         ms.assert_called_once()
         ml.assert_called_once()
         mk.assert_called_once()
+
+
+def test_get_provider_url_mainnet():
+    url = fetch_and_check.get_provider_url('mainnet')
+    assert url == fetch_and_check.NETWORK_PROVIDERS['mainnet']
+
+
+def test_get_provider_url_invalid():
+    with pytest.raises(ValueError):
+        fetch_and_check.get_provider_url('foobar')
