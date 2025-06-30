@@ -100,3 +100,52 @@ def test_scan_multiple_contracts_allow_duplicates():
         res = fetch_and_check.scan_multiple_contracts(count=2, network='mainnet', unique=False)
         assert res == [{'address': '0x1'}, {'address': '0x1'}]
         assert m.call_count == 2
+
+
+def test_scan_multiple_contracts_respects_existing_file(tmp_path):
+    address_file = tmp_path / 'addrs.txt'
+    address_file.write_text('0x1\n')
+
+    responses = [
+        {'address': '0x1'},
+        {'address': '0x2'},
+        {'address': '0x3'},
+    ]
+
+    def side_effect(*_, **__):
+        return responses.pop(0)
+
+    with mock.patch('fetch_and_check.scan_random_contract', side_effect=side_effect) as m:
+        res = fetch_and_check.scan_multiple_contracts(
+            count=2,
+            network='mainnet',
+            address_file=str(address_file),
+        )
+        assert [r['address'] for r in res] == ['0x2', '0x3']
+        assert m.call_count == 3
+    assert address_file.read_text().splitlines() == ['0x1', '0x2', '0x3']
+
+
+def test_vulnerable_addresses_written(tmp_path):
+    report_dir = tmp_path / 'reports'
+
+    reports = [
+        {'address': '0x1', 'suicidal': True, 'prodigal': False, 'greedy': False},
+        {'address': '0x2', 'suicidal': False, 'prodigal': True, 'greedy': True},
+    ]
+
+    def side_effect(*_, **__):
+        return reports.pop(0)
+
+    with mock.patch('fetch_and_check.scan_random_contract', side_effect=side_effect):
+        fetch_and_check.scan_multiple_contracts(
+            count=2,
+            network='mainnet',
+            address_file=None,
+            report_dir=str(report_dir),
+        )
+
+    assert (report_dir / 'suicidal.txt').read_text().splitlines() == ['0x1']
+    assert (report_dir / 'prodigal.txt').read_text().splitlines() == ['0x2']
+    assert (report_dir / 'greedy.txt').read_text().splitlines() == ['0x2']
+
