@@ -95,7 +95,30 @@ def test_count_contracts(monkeypatch):
 
     stats = contract_stats.count_contracts('mainnet', 0, 0)
     assert stats == {
+        'network': 'mainnet',
+        'start_block': 0,
+        'end_block': 0,
         'contract_count': 1,
         'total_balance_wei': 200,
         'total_code_size': 3,
     }
+
+
+def test_file_data_store(tmp_path):
+    store_path = tmp_path / 'out.csv'
+    store = contract_stats.FileDataStore(str(store_path))
+    stats = {
+        'network': 'mainnet',
+        'start_block': 0,
+        'end_block': 0,
+        'contract_count': 2,
+        'total_balance_wei': 1000,
+        'total_code_size': 10,
+    }
+    store.save(stats)
+
+    content = store_path.read_text().splitlines()
+    assert content[0].startswith('network,start_block')
+    assert content[1].split(',') == [
+        'mainnet', '0', '0', '2', '1000', '10'
+    ]
