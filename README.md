@@ -48,16 +48,50 @@ $ python fetch_and_check.py --network mainnet --count 5
 
 Additional networks can be added to the tool in the future.
 
-## Supported Operating Systems and Dependencies
+## Installation
 
-Maian should run smoothly on Linux (we've checked on Ubuntu/Mint) and MacOS. Our attempts to run it on Windows have failed. 
-The list of dependencies is as follows:
+Maian requires Python 3.8 or newer. Install the Python dependencies using:
 
-1. Go Ethereum, check https://ethereum.github.io/go-ethereum/install/
-2. Solidity compiler, check http://solidity.readthedocs.io/en/develop/installing-solidity.html
-3. Z3 Theorem prover, check https://github.com/Z3Prover/z3
-4. web3, try `pip install web3`
-5. PyQt5 (only for GUI Maian), try `sudo apt install python-pyqt5` 
+```bash
+pip install web3 z3-solver
+```
+
+For the optional GUI you also need `PyQt5`, which can be obtained with your
+package manager (for example `sudo apt install python-pyqt5` on Debian based
+systems). The tool additionally relies on the following external software:
+
+1. Go Ethereum – <https://ethereum.github.io/go-ethereum/install/>
+2. Solidity compiler – <https://docs.soliditylang.org/en/latest/installing-solidity.html>
+3. Z3 Theorem prover – <https://github.com/Z3Prover/z3>
+
+### Running Maian
+
+From the repository root you can analyze a contract using:
+
+```bash
+python tool/maian.py -s MyContract.sol MyContract -c 0
+```
+
+A list of all command line options is available with `python tool/maian.py -h`.
+
+Random contracts can be scanned with `fetch_and_check.py`:
+
+```bash
+python tool/fetch_and_check.py --network mainnet --count 5
+```
+
+### Running the tests
+
+All tests are executed with `pytest`:
+
+```bash
+pytest -q
+```
+
+## Supported Operating Systems
+
+Maian should run smoothly on Linux (tested on Ubuntu/Mint) and macOS. Attempts
+to run it on Windows have failed.
 
 ## Important
 
