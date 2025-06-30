@@ -94,11 +94,39 @@ def scan_random_contract(network: str = 'mainnet'):
     return report
 
 
-def scan_multiple_contracts(count: int, network: str = 'mainnet'):
-    """Fetch and scan ``count`` random contracts from ``network``."""
+def scan_multiple_contracts(count: int, network: str = 'mainnet', *,
+                            unique: bool = True, address_file: str | None = None):
+    """Fetch and scan ``count`` random contracts from ``network``.
+
+    Parameters
+    ----------
+    count:
+        Number of contracts to scan.
+    network:
+        Ethereum network to use.
+    unique:
+        If ``True`` the same contract address will not be scanned twice.
+    address_file:
+        Optional path to store scanned addresses, one per line.
+    """
     reports = []
-    for _ in range(count):
-        reports.append(scan_random_contract(network=network))
+    seen = set()
+    addresses = []
+
+    while len(reports) < count:
+        report = scan_random_contract(network=network)
+        addr = report.get('address')
+        if unique and addr in seen:
+            continue
+        seen.add(addr)
+        addresses.append(addr)
+        reports.append(report)
+
+    if address_file:
+        with open(address_file, 'w', encoding='utf-8') as fh:
+            for a in addresses:
+                fh.write(a + "\n")
+
     return reports
 
 
@@ -116,9 +144,22 @@ if __name__ == '__main__':
         '-c', '--count', type=int, default=1,
         help='number of contracts to scan (default: 1)'
     )
+    parser.add_argument(
+        '--address-file', default='reports/scanned_addresses.txt',
+        help='file to store scanned addresses (default: reports/scanned_addresses.txt)'
+    )
+    parser.add_argument(
+        '--allow-duplicates', action='store_true',
+        help='allow scanning the same address more than once'
+    )
     args = parser.parse_args()
 
-    reports = scan_multiple_contracts(count=args.count, network=args.network)
+    reports = scan_multiple_contracts(
+        count=args.count,
+        network=args.network,
+        unique=not args.allow_duplicates,
+        address_file=args.address_file,
+    )
     for i, rep in enumerate(reports, 1):
         print(f'Scan {i}:')
         for k, v in rep.items():
