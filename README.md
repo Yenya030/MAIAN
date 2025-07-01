@@ -72,8 +72,8 @@ from data_getters import DataGetterAWSParquet
 
 getter = DataGetterAWSParquet("s3://bucket/path")
 for page in getter.fetch_chunk(100000, 100100):
-    for address, bytecode, block in page:
-        print(address, block)
+    for row in page:
+        print(row["Address"], row["BlockNumber"])
 ```
 
 ## Installation

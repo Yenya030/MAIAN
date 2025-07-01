@@ -24,4 +24,7 @@ def test_parquet_getter_basic(tmp_path):
     g = DataGetterAWSParquet(str(f), page_rows=2)
     pages = list(g.fetch_chunk(2, 3))
     rows = [r for page in pages for r in page]
-    assert rows == [('0x2', 'bb', 2), ('0x3', 'cc', 3)]
+    assert rows == [
+        {"Address": "0x2", "ByteCode": "bb", "BlockNumber": 2},
+        {"Address": "0x3", "ByteCode": "cc", "BlockNumber": 3},
+    ]

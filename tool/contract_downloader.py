@@ -36,8 +36,12 @@ class ParquetSource(DataSource):
     def fetch(self, start_block: int, end_block: int) -> List[Dict]:
         contracts = []
         for page in self._getter.fetch_chunk(start_block, end_block):
-            for addr, code, blk in page:
-                contracts.append({"address": addr, "bytecode": code, "block": blk})
+            for row in page:
+                contracts.append({
+                    "address": row["Address"],
+                    "bytecode": row["ByteCode"],
+                    "block": row["BlockNumber"],
+                })
         return contracts
 
 

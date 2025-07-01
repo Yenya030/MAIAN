@@ -16,8 +16,9 @@ contract store.
 3. **Fetch contracts** – the chosen `DataSource` retrieves contract dictionaries
    using its `fetch` method. The provided `ParquetSource` relies on
    `DataGetterAWSParquet` to read data from a Parquet dataset (local or S3).
-4. **Validate data** – each returned contract must contain an address, bytecode
-   and the block number. Invalid entries raise an assertion error.
+4. **Validate data** – each returned contract must contain ``Address``,
+   ``ByteCode`` and ``BlockNumber`` fields. Invalid entries raise an assertion
+   error.
 5. **Write to file** – new contracts are prepended to
    `contracts/contracts.jsonl` using `_prepend_with_limit`, which enforces the
    configured size limit and verifies that all JSON lines remain intact.
@@ -37,7 +38,7 @@ flowchart TD
     defaultRange --> fetch
     fetch["source.fetch"] --> getter["DataGetterAWSParquet"]
     getter --> dataset[("Parquet data")]
-    fetch --> validate["check address/bytecode"]
+    fetch --> validate["check Address/ByteCode/BlockNumber"]
     validate --> prepend["_prepend_with_limit"]
     prepend --> upd["update block metadata"]
     upd --> save["save files"]
