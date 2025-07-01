@@ -140,10 +140,33 @@ def run_continuous(
     interval: float = 5.0,
     page_rows: int = 2000,
     size_limit_mb: float = DEFAULT_LIMIT_MB,
+    max_rounds: Optional[int] = None,
 ) -> None:
-    """Continuously update the database until the size limit is reached."""
+    """Continuously update the database until the size limit is reached.
+
+    Parameters
+    ----------
+    parquet_path:
+        Location of the Parquet dataset.
+    db_path:
+        Destination SQLite file.
+    interval:
+        Sleep time between update rounds.
+    page_rows:
+        Number of rows fetched per chunk.
+    size_limit_mb:
+        Maximum allowed database size in MB.
+    max_rounds:
+        Optional limit on how many update cycles to run. Mainly useful for
+        testing.
+    """
+
+    rounds = 0
+    limit_bytes = size_limit_mb * 1024 * 1024
     while True:
-        if os.path.exists(db_path) and os.path.getsize(db_path) >= size_limit_mb * 1024 * 1024:
+        if max_rounds is not None and rounds >= max_rounds:
+            break
+        if os.path.exists(db_path) and os.path.getsize(db_path) >= limit_bytes:
             break
         inserted = update_contract_db(
             parquet_path,
@@ -151,10 +174,9 @@ def run_continuous(
             size_limit_mb=size_limit_mb,
             page_rows=page_rows,
         )
-        if not inserted:
+        if os.path.exists(db_path) and os.path.getsize(db_path) >= limit_bytes:
             break
-        if os.path.getsize(db_path) >= size_limit_mb * 1024 * 1024:
-            break
+        rounds += 1
         time.sleep(interval)
 
 

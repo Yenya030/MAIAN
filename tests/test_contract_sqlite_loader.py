@@ -1,5 +1,7 @@
 from pathlib import Path
 import sqlite3
+import threading
+import time
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -69,3 +71,50 @@ def test_size_limit_enforced(tmp_path):
     row_count = conn.execute('SELECT COUNT(*) FROM contracts').fetchone()[0]
     conn.close()
     assert row_count < 4
+
+
+def test_run_continuous_updates_with_new_blocks(tmp_path):
+    data = tmp_path / 'data.parquet'
+    # initial dataset with a single block
+    table = pa.table({
+        'block_number': [1],
+        'address': ['0x1'],
+        'bytecode': ['aa'],
+    })
+    pq.write_table(table, data)
+
+    db = tmp_path / 'out.db'
+
+    def runner():
+        loader.run_continuous(str(data), str(db), interval=0.2, max_rounds=2)
+
+    t = threading.Thread(target=runner)
+    t.start()
+
+    # wait for the first block to be written
+    for _ in range(20):
+        if db.exists():
+            try:
+                conn = sqlite3.connect(db)
+                count = conn.execute('SELECT COUNT(*) FROM contracts').fetchone()[0]
+                conn.close()
+            except sqlite3.OperationalError:
+                count = 0
+            if count:
+                break
+        time.sleep(0.05)
+
+    # extend dataset with a new block before the next iteration
+    table = pa.table({
+        'block_number': [1, 2],
+        'address': ['0x1', '0x2'],
+        'bytecode': ['aa', 'bb'],
+    })
+    pq.write_table(table, data)
+
+    t.join()
+
+    conn = sqlite3.connect(db)
+    blocks = [r[0] for r in conn.execute('SELECT block_number FROM contracts ORDER BY block_number')]
+    conn.close()
+    assert blocks == [1, 2]
