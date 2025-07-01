@@ -145,3 +145,71 @@ def test_rpc_source_fetch(monkeypatch):
     res = source.fetch(0, 0)
     assert {c['address'] for c in res} == {'0x1', '0x2'}
 
+
+class RangeSource(contract_downloader.DataSource):
+    """Dummy source that returns one contract per block."""
+
+    def __init__(self, latest: int) -> None:
+        self.latest = latest
+        self.calls = []
+
+    def latest_block(self) -> int:
+        return self.latest
+
+    def fetch(self, start_block: int, end_block: int):
+        self.calls.append((start_block, end_block))
+        return [
+            {"address": hex(i), "bytecode": "aa", "block": i}
+            for i in range(start_block, end_block + 1)
+        ]
+
+
+def _run_two_stage_download(tmp_path, source):
+    cfile = tmp_path / "out.jsonl"
+    mfile = tmp_path / "meta.json"
+    start1 = source.latest_block() - 100
+    end1 = source.latest_block()
+    contract_downloader.update_contract_store(
+        source,
+        contract_file=str(cfile),
+        metadata_file=str(mfile),
+        start_block=start1,
+        end_block=end1,
+    )
+    start2 = source.latest_block() - 1000
+    end2 = start1 - 1
+    contract_downloader.update_contract_store(
+        source,
+        contract_file=str(cfile),
+        metadata_file=str(mfile),
+        start_block=start2,
+        end_block=end2,
+    )
+    return cfile, mfile, start1, end1, start2, end2, source.calls
+
+
+def test_update_contract_store_two_stage(tmp_path):
+    source = RangeSource(2000)
+    cfile, mfile, start1, end1, start2, end2, calls = _run_two_stage_download(
+        tmp_path, source
+    )
+    lines = cfile.read_text().splitlines()
+    assert len(lines) == 1001
+    meta = json.loads(mfile.read_text())
+    assert meta["newest_block"] == end1
+    assert meta["oldest_block"] == start2
+    assert calls == [(start1, end1), (start2, end2)]
+
+
+def test_update_contract_store_two_stage_rpc(tmp_path):
+    source = RangeSource(3000)
+    cfile, mfile, start1, end1, start2, end2, calls = _run_two_stage_download(
+        tmp_path, source
+    )
+    lines = cfile.read_text().splitlines()
+    assert len(lines) == 1001
+    meta = json.loads(mfile.read_text())
+    assert meta["newest_block"] == end1
+    assert meta["oldest_block"] == start2
+    assert calls == [(start1, end1), (start2, end2)]
+

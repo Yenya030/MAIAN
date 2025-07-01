@@ -29,6 +29,8 @@ Additional tools:
   written to `contracts/EtherscanVerified.jsonl`. A second source reads blocks
   from an RPC endpoint (for example Infura) and follows the same metadata
   scheme.
+- Sample outputs used in the tests live in `contracts/etherscan.jsonl` and
+  `contracts/infura.jsonl` alongside their metadata files.
 
 - A `Dockerfile` in the repository root can build a container with all
   dependencies installed. Build it using `docker build -t maian .`.
