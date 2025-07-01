@@ -11,6 +11,8 @@ import pyarrow.dataset as ds
 from data_getters import DataGetterAWSParquet
 
 DEFAULT_LIMIT_MB = 40
+# Default S3 path for the AWS Open Data Parquet dataset
+DEFAULT_PARQUET_DATASET = "s3://aws-public-blockchain/v1.0/eth/contracts/"
 
 
 def _latest_block(path: str) -> int:
@@ -182,25 +184,38 @@ def run_continuous(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Store contract data in SQLite")
-    parser.add_argument("parquet", help="Path to Parquet dataset")
-    parser.add_argument("db", help="SQLite database file")
+    parser.add_argument(
+        "paths",
+        nargs="+",
+        help=(
+            "<db> or <dataset> <db>. When only <db> is given, the AWS "
+            f"dataset {DEFAULT_PARQUET_DATASET} is used"
+        ),
+    )
     parser.add_argument("--page-rows", type=int, default=2000, help="rows per fetch chunk")
     parser.add_argument("--interval", type=float, default=5.0, help="poll interval for continuous mode")
     parser.add_argument("--size-limit", type=float, default=DEFAULT_LIMIT_MB, help="database size limit in MB")
     parser.add_argument("--once", action="store_true", help="run a single update instead of continuous mode")
     args = parser.parse_args()
+    if len(args.paths) == 1:
+        parquet_path = DEFAULT_PARQUET_DATASET
+        db_path = args.paths[0]
+    elif len(args.paths) == 2:
+        parquet_path, db_path = args.paths
+    else:
+        parser.error("expected <db> or <dataset> <db>")
 
     if args.once:
         update_contract_db(
-            args.parquet,
-            args.db,
+            parquet_path,
+            db_path,
             size_limit_mb=args.size_limit,
             page_rows=args.page_rows,
         )
     else:
         run_continuous(
-            args.parquet,
-            args.db,
+            parquet_path,
+            db_path,
             interval=args.interval,
             page_rows=args.page_rows,
             size_limit_mb=args.size_limit,

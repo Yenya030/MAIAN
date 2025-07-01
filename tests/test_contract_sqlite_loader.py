@@ -118,3 +118,23 @@ def test_run_continuous_updates_with_new_blocks(tmp_path):
     blocks = [r[0] for r in conn.execute('SELECT block_number FROM contracts ORDER BY block_number')]
     conn.close()
     assert blocks == [1, 2]
+
+
+def test_cli_default_dataset(tmp_path, monkeypatch):
+    data = tmp_path / "data.parquet"
+    _make_dataset(data)
+
+    used_path = {}
+
+    class DummyGetter(loader.DataGetterAWSParquet):
+        def __init__(self, path: str, page_rows: int = 20_000) -> None:
+            used_path["path"] = path
+            super().__init__(str(data), page_rows)
+
+    monkeypatch.setattr(loader, "DataGetterAWSParquet", DummyGetter)
+    monkeypatch.setattr(loader, "_latest_block", lambda p: 3)
+
+    db = tmp_path / "out.db"
+    monkeypatch.setattr(sys, "argv", ["contract_sqlite_loader.py", str(db), "--once"])
+    loader.main()
+    assert used_path["path"] == loader.DEFAULT_PARQUET_DATASET
