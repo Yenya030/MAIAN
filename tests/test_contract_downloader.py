@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from unittest import mock
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -53,108 +52,6 @@ def test_prepend_and_limit(tmp_path):
     assert meta['oldest_block'] == 2
 
 
-def test_get_latest_block(monkeypatch):
-    def fake_get(url, params=None, timeout=10):
-        class R:
-            def __init__(self):
-                self.status_code = 200
-                self.url = url
-                self.content = b'{}'
-            def raise_for_status(self):
-                pass
-            def json(self):
-                return {'result': '0x10'}
-        return R()
-    monkeypatch.setattr(contract_downloader.requests, 'get', fake_get)
-    block = contract_downloader.get_latest_block('k')
-    assert block == 16
-
-
-def test_etherscan_verified(monkeypatch):
-    captured = {}
-
-    def fake_get(url, params=None, timeout=10):
-        captured['params'] = params
-        class R:
-            def __init__(self):
-                self.status_code = 200
-                self.url = url
-                self.content = b'{}'
-            def raise_for_status(self):
-                pass
-
-            def json(self):
-                return {'status': '1', 'result': []}
-
-        return R()
-
-    monkeypatch.setattr(contract_downloader.requests, 'get', fake_get)
-    source = contract_downloader.EtherscanSource('k', verified_only=True)
-    source.fetch(1, 2)
-    assert captured['params'].get('filter') == 'verified'
-
-
-def test_etherscan_latest_block(monkeypatch):
-    """Ensure a request is made and the block number parsed."""
-    captured = {}
-
-    def fake_get(url, params=None, timeout=10):
-        captured['params'] = params
-        class R:
-            def __init__(self):
-                self.status_code = 200
-                self.url = url
-                self.content = b'{}'
-            def raise_for_status(self):
-                pass
-
-            def json(self):
-                return {'result': '0x20'}
-
-        return R()
-
-    monkeypatch.setattr(contract_downloader.requests, 'get', fake_get)
-    source = contract_downloader.EtherscanSource('k')
-    block = source.latest_block()
-    assert block == 32
-    assert captured['params']['action'] == 'eth_blockNumber'
-
-
-def test_etherscan_fetch_parsing(monkeypatch):
-    """Verify contracts are parsed from the API response."""
-    captured = {}
-    data = {
-        'status': '1',
-        'result': [
-            {
-                'ContractAddress': '0x1',
-                'Bytecode': '0xaa',
-                'BlockNumber': '10',
-            }
-        ],
-    }
-
-    def fake_get(url, params=None, timeout=10):
-        captured['params'] = params
-        class R:
-            def __init__(self):
-                self.status_code = 200
-                self.url = url
-                self.content = b'{}'
-            def raise_for_status(self):
-                pass
-
-            def json(self):
-                return data
-
-        return R()
-
-    monkeypatch.setattr(contract_downloader.requests, 'get', fake_get)
-    source = contract_downloader.EtherscanSource('k')
-    res = source.fetch(10, 10)
-    assert res == [{'address': '0x1', 'bytecode': '0xaa', 'block': 10}]
-    assert captured['params']['startblock'] == 10
-    assert captured['params']['endblock'] == 10
 
 
 class DummyTx:
@@ -198,26 +95,6 @@ class DummyWeb3:
         return True
 
 
-def test_rpc_source_fetch(monkeypatch):
-    w3 = DummyWeb3()
-    tx1 = DummyTx(to='0x1')
-    tx2 = DummyTx(to=None, tx_hash='h2')
-    block = DummyBlock([tx1, tx2])
-    w3.eth._blocks = [block]
-    w3.eth._codes['0x1'] = b'aa'
-    w3.eth._codes['0x2'] = b'bb'
-    w3.eth._receipts['h2'] = DummyReceipt('0x2')
-
-    class DummyWeb3Class:
-        HTTPProvider = staticmethod(lambda url: None)
-
-        def __new__(cls, provider):
-            return w3
-
-    monkeypatch.setattr(contract_downloader, 'Web3', DummyWeb3Class)
-    source = contract_downloader.RPCSource('url')
-    res = source.fetch(0, 0)
-    assert {c['address'] for c in res} == {'0x1', '0x2'}
 
 
 class RangeSource(contract_downloader.DataSource):

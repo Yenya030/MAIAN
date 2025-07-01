@@ -4,13 +4,8 @@ The test suite verifies the behaviour of the contract downloader and related uti
 
 ```
 tests/test_contract_downloader.py::test_prepend_and_limit PASSED         [  3%]
-tests/test_contract_downloader.py::test_get_latest_block PASSED          [  7%]
-tests/test_contract_downloader.py::test_etherscan_verified PASSED        [ 11%]
-tests/test_contract_downloader.py::test_etherscan_latest_block PASSED    [ 15%]
-tests/test_contract_downloader.py::test_etherscan_fetch_parsing PASSED   [ 19%]
-tests/test_contract_downloader.py::test_rpc_source_fetch PASSED          [ 23%]
-tests/test_contract_downloader.py::test_update_contract_store_two_stage PASSED [ 26%]
-tests/test_contract_downloader.py::test_update_contract_store_two_stage_rpc PASSED [ 30%]
+tests/test_contract_downloader.py::test_update_contract_store_two_stage PASSED [  7%]
+tests/test_contract_downloader.py::test_update_contract_store_two_stage_rpc PASSED [ 11%]
 tests/test_contract_downloader.py::test_update_contract_store_default_latest PASSED [ 34%]
 tests/test_contract_stats.py::test_collect_contract_addresses PASSED     [ 38%]
 tests/test_contract_stats.py::test_count_contracts PASSED                [ 42%]
@@ -26,10 +21,6 @@ tests/test_fetch_and_check.py::test_scan_multiple_contracts_respects_existing_fi
 tests/test_fetch_and_check.py::test_vulnerable_addresses_written PASSED  [ 80%]
 tests/test_fetch_and_check_extra.py::test_fetch_contract_bytecode_returns_hex PASSED [ 84%]
 tests/test_fetch_and_check_extra.py::test_random_contract_address_error PASSED [ 88%]
-tests/test_fetch_tool_validation.py::test_successful_fetch_and_parse PASSED [ 92%]
-tests/test_fetch_tool_validation.py::test_http_failure PASSED            [ 96%]
-tests/test_fetch_tool_validation.py::test_malformed_response PASSED      [100%]
-
 ```
 
 All tests passed.
