@@ -27,3 +27,6 @@ Additional tools:
   `contracts/contracts.jsonl`. Metadata about the stored block range and file
   size lives in `contracts/metadata.json`.
 
+- A `Dockerfile` in the repository root can build a container with all
+  dependencies installed. Build it using `docker build -t maian .`.
+
