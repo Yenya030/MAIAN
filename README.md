@@ -63,9 +63,11 @@ Contract bytecode can also be loaded from Google BigQuery. Create a free GCP
 Sandbox project and enable the BigQuery API. Install the additional dependency
 with ``pip install -r requirements-bigquery.txt``. The ``DataGetterBigQuery``
 class pulls data from ``bigquery-public-data.crypto_ethereum.contracts`` using
-the free tier (up to 1&nbsp;TB/month of processed data). Provide credentials via
-``GOOGLE_APPLICATION_CREDENTIALS`` and choose a small block window to keep the
-queried data under the free limit.
+the free tier (up to 1&nbsp;TB/month of processed data). You can authenticate
+either with ``GOOGLE_APPLICATION_CREDENTIALS`` or an API key. When using an API
+key set the ``BIGQUERY_API_KEY`` environment variable and provide your project
+ID via ``BIGQUERY_PROJECT_ID`` or the constructor. Always choose a small block
+window to keep the queried data under the free limit.
 
 ## Installation
 

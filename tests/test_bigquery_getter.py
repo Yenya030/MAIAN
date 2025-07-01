@@ -7,6 +7,8 @@ root_dir = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root_dir / 'src'))
 
 from data_getters import DataGetterBigQuery
+from data_getters import bigquery_getter
+
 
 PROXY_PREFIXES = (
     "0x363d3d373d3d3d363d73",
@@ -33,3 +35,39 @@ def test_bigquery_basic():
     assert getter.last_job.total_bytes_processed < 1_000_000_000
     for _, code in rows:
         assert not code.startswith(PROXY_PREFIXES)
+
+
+def test_bigquery_uses_api_key(monkeypatch):
+    captured = {}
+
+    class DummyResult:
+        def __init__(self):
+            self.pages = [[]]
+
+    class DummyJob:
+        def result(self, page_size=None):
+            return DummyResult()
+
+    class DummyClient:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        def query(self, sql, job_config=None):
+            return DummyJob()
+
+    monkeypatch.setattr(bigquery_getter, "bigquery", type(
+        "DummyModule",
+        (),
+        {
+            "Client": DummyClient,
+            "QueryJobConfig": bigquery_getter.bigquery.QueryJobConfig,
+            "ScalarQueryParameter": bigquery_getter.bigquery.ScalarQueryParameter,
+        },
+    ))
+
+    g = DataGetterBigQuery(api_key="XYZ", project_id="proj", page_rows=1)
+    list(g.fetch_chunk(1, 2))
+
+    assert "client_options" in captured
+    assert captured["client_options"].api_key == "XYZ"
+    assert captured.get("project") == "proj"
