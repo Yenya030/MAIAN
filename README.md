@@ -56,6 +56,18 @@ with a metadata file describing the covered block range.
 The full download logic is explained in
 [`docs/data_download_flow.md`](docs/data_download_flow.md).
 
+### SQLite Contract Store
+
+`contract_sqlite_loader.py` can store contract bytecode in a SQLite database.
+The tool keeps track of the scanned block range in a `meta` table and enforces
+a configurable size limit (40 MB by default).
+
+```
+python tool/contract_sqlite_loader.py <dataset> contracts.db
+```
+
+Use `--once` to fetch a single batch instead of running continuously.
+
 ### Using AWS Open Data
 
 Contract bytecode is also available through the AWS Open-Data program as
