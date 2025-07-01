@@ -64,6 +64,21 @@ systems). The tool additionally relies on the following external software:
 2. Solidity compiler – <https://docs.soliditylang.org/en/latest/installing-solidity.html>
 3. Z3 Theorem prover – <https://github.com/Z3Prover/z3>
 
+### Docker
+
+A `Dockerfile` is provided to build an isolated environment with all
+dependencies preinstalled. From the repository root run:
+
+```bash
+docker build -t maian .
+```
+
+After building, the tool can be executed with:
+
+```bash
+docker run --rm maian python tool/maian.py -h
+```
+
 ### Running Maian
 
 From the repository root you can analyze a contract using:
