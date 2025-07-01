@@ -76,6 +76,15 @@ python tool/contract_sqlite_loader.py /path/to/parquet contracts.db
 
 Use `--once` to fetch a single batch instead of running continuously.
 
+### Viewing Database Entries
+
+The `db_head.py` helper prints the first few rows stored in the SQLite database.
+
+```
+python tool/db_head.py contracts.db --count 3
+```
+
+
 ### Using AWS Open Data
 
 Contract bytecode is also available through the AWS Open-Data program as
