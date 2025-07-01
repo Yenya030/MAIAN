@@ -112,7 +112,7 @@ class RPCSource(DataSource):
                     contracts.append(
                         {
                             "address": addr,
-                            "bytecode": code.hex()[2:],
+                            "bytecode": code.hex(),
                             "block": num,
                         }
                     )

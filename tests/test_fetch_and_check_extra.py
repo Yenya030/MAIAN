@@ -23,7 +23,7 @@ def test_fetch_contract_bytecode_returns_hex():
     address = '0xabc'
     w3.codes[address] = b'\x01\x02'
     result = fetch_and_check.fetch_contract_bytecode(w3, address)
-    assert result == "02"
+    assert result == "0102"
 
 
 def test_random_contract_address_error():

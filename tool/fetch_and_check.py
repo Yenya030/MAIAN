@@ -41,8 +41,9 @@ def random_contract_address(w3, search_depth=1000, attempts=20):
 
 
 def fetch_contract_bytecode(w3, address):
+    """Return bytecode for ``address`` as a hex string without the ``0x`` prefix."""
     code = w3.eth.get_code(address)
-    return code.hex()[2:]
+    return code.hex()
 
 
 def run_checks(bytecode, address):
