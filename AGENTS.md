@@ -29,6 +29,8 @@ Additional tools:
   written to `contracts/EtherscanVerified.jsonl`. A second source reads blocks
   from an RPC endpoint (for example Infura) and follows the same metadata
   scheme.
+  When no metadata exists and no block range is provided, the downloader starts
+  from the latest block only.
 - Sample outputs used in the tests live in `contracts/etherscan.jsonl` and
   `contracts/infura.jsonl` alongside their metadata files.
 
