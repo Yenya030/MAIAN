@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import os
 import time
 from typing import Iterable, List, Tuple, Optional
 
 from google.cloud import bigquery
 from google.api_core.exceptions import BadRequest, GoogleAPICallError
+from google.api_core.client_options import ClientOptions
 
 
 class DataGetter:
@@ -28,8 +30,28 @@ class DataGetterBigQuery(DataGetter):
         """
     )
 
-    def __init__(self, page_rows: int = 20_000) -> None:
-        self._client = bigquery.Client()
+    def __init__(
+        self,
+        page_rows: int = 20_000,
+        *,
+        api_key: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ) -> None:
+        """Create a new BigQuery data getter.
+
+        ``api_key`` and ``project_id`` can be used to authenticate with an API
+        key instead of ``GOOGLE_APPLICATION_CREDENTIALS``. If omitted, the
+        default credentials flow is used.
+        """
+        if api_key is None:
+            api_key = os.getenv("BIGQUERY_API_KEY")
+        if project_id is None:
+            project_id = os.getenv("BIGQUERY_PROJECT_ID")
+        if api_key:
+            opts = ClientOptions(api_key=api_key)
+            self._client = bigquery.Client(project=project_id, client_options=opts)
+        else:
+            self._client = bigquery.Client()
         self._page_rows = page_rows
         self._last_job: Optional[bigquery.job.QueryJob] = None
 
