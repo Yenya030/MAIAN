@@ -2,6 +2,9 @@ import json
 from pathlib import Path
 from unittest import mock
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 import sys
 root_dir = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root_dir / 'tool'))
@@ -301,4 +304,33 @@ def test_update_contract_store_default_latest(monkeypatch, tmp_path):
     meta = json.loads(mfile.read_text())
     assert meta["newest_block"] == 500
     assert meta["oldest_block"] == 500
+
+
+def test_parquet_source(tmp_path):
+    table = pa.table({
+        "block_number": [1, 2, 3],
+        "address": ["0x1", "0x2", "0x3"],
+        "bytecode": ["aa", "bb", "cc"],
+    })
+    f = tmp_path / "contracts.parquet"
+    pq.write_table(table, f)
+
+    source = contract_downloader.ParquetSource(str(f))
+    assert source.latest_block() == 3
+
+    cfile = tmp_path / "out.jsonl"
+    mfile = tmp_path / "meta.json"
+    contract_downloader.update_contract_store(
+        source,
+        contract_file=str(cfile),
+        metadata_file=str(mfile),
+        start_block=2,
+        end_block=3,
+    )
+    lines = cfile.read_text().splitlines()
+    blocks = [json.loads(l)["block"] for l in lines]
+    assert blocks == [2, 3]
+    meta = json.loads(mfile.read_text())
+    assert meta["newest_block"] == 3
+    assert meta["oldest_block"] == 2
 

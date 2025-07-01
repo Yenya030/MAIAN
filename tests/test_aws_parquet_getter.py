@@ -4,7 +4,7 @@ import pyarrow.parquet as pq
 
 import sys
 root_dir = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(root_dir / 'src'))
+sys.path.insert(0, str(root_dir / 'tool'))
 
 from data_getters import DataGetterAWSParquet
 
@@ -24,4 +24,4 @@ def test_parquet_getter_basic(tmp_path):
     g = DataGetterAWSParquet(str(f), page_rows=2)
     pages = list(g.fetch_chunk(2, 3))
     rows = [r for page in pages for r in page]
-    assert rows == [('0x2', 'bb'), ('0x3', 'cc')]
+    assert rows == [('0x2', 'bb', 2), ('0x3', 'cc', 3)]

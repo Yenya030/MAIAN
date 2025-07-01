@@ -85,8 +85,8 @@ from data_getters import DataGetterAWSParquet
 
 getter = DataGetterAWSParquet("s3://bucket/path")
 for page in getter.fetch_chunk(100000, 100100):
-    for address, bytecode in page:
-        print(address, len(bytecode))
+    for address, bytecode, block in page:
+        print(address, block)
 ```
 
 ## Installation
