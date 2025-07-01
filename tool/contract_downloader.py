@@ -195,8 +195,12 @@ def update_contract_store(
         meta["size_limit"] = int(size_limit_mb * 1024 * 1024)
     limit = meta.get("size_limit", DEFAULT_LIMIT_MB * 1024 * 1024)
     if start_block is None and end_block is None:
-        start_block = (meta.get("newest_block") or 0) + 1
+        # When no range is specified and we have no metadata yet, use the
+        # current block as the starting point. Otherwise continue from the
+        # latest recorded block.
+        newest = meta.get("newest_block")
         end_block = source.latest_block()
+        start_block = end_block if newest is None else newest + 1
     elif start_block is None:
         start_block = end_block
     elif end_block is None:

@@ -83,6 +83,61 @@ def test_etherscan_verified(monkeypatch):
     assert captured['params'].get('filter') == 'verified'
 
 
+def test_etherscan_latest_block(monkeypatch):
+    """Ensure a request is made and the block number parsed."""
+    captured = {}
+
+    def fake_get(url, params=None, timeout=10):
+        captured['params'] = params
+        class R:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {'result': '0x20'}
+
+        return R()
+
+    monkeypatch.setattr(contract_downloader.requests, 'get', fake_get)
+    source = contract_downloader.EtherscanSource('k')
+    block = source.latest_block()
+    assert block == 32
+    assert captured['params']['action'] == 'eth_blockNumber'
+
+
+def test_etherscan_fetch_parsing(monkeypatch):
+    """Verify contracts are parsed from the API response."""
+    captured = {}
+    data = {
+        'status': '1',
+        'result': [
+            {
+                'ContractAddress': '0x1',
+                'Bytecode': '0xaa',
+                'BlockNumber': '10',
+            }
+        ],
+    }
+
+    def fake_get(url, params=None, timeout=10):
+        captured['params'] = params
+        class R:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return data
+
+        return R()
+
+    monkeypatch.setattr(contract_downloader.requests, 'get', fake_get)
+    source = contract_downloader.EtherscanSource('k')
+    res = source.fetch(10, 10)
+    assert res == [{'address': '0x1', 'bytecode': '0xaa', 'block': 10}]
+    assert captured['params']['startblock'] == 10
+    assert captured['params']['endblock'] == 10
+
+
 class DummyTx:
     def __init__(self, to=None, tx_hash='0x0'):
         self.to = to
@@ -212,4 +267,22 @@ def test_update_contract_store_two_stage_rpc(tmp_path):
     assert meta["newest_block"] == end1
     assert meta["oldest_block"] == start2
     assert calls == [(start1, end1), (start2, end2)]
+
+
+def test_update_contract_store_default_latest(monkeypatch, tmp_path):
+    """When no range is given and no metadata exists, use the latest block."""
+    source = RangeSource(500)
+    cfile = tmp_path / "c.jsonl"
+    mfile = tmp_path / "m.json"
+    contract_downloader.update_contract_store(
+        source,
+        contract_file=str(cfile),
+        metadata_file=str(mfile),
+    )
+    assert source.calls == [(500, 500)]
+    lines = cfile.read_text().splitlines()
+    assert len(lines) == 1
+    meta = json.loads(mfile.read_text())
+    assert meta["newest_block"] == 500
+    assert meta["oldest_block"] == 500
 
