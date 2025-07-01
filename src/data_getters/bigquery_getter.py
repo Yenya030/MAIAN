@@ -43,6 +43,8 @@ class DataGetterBigQuery(DataGetter):
         key instead of ``GOOGLE_APPLICATION_CREDENTIALS``. If omitted, the
         default credentials flow is used.
         """
+        if os.getenv("DISABLE_BIGQUERY") and api_key is None:
+            raise RuntimeError("BigQuery disabled")
         if api_key is None:
             api_key = os.getenv("BIGQUERY_API_KEY")
         if project_id is None:
