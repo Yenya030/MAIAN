@@ -138,3 +138,25 @@ def test_cli_default_dataset(tmp_path, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["contract_sqlite_loader.py", str(db), "--once"])
     loader.main()
     assert used_path["path"] == loader.DEFAULT_PARQUET_DATASET
+
+
+def test_run_continuous_until_stops_on_event(tmp_path):
+    data = tmp_path / "data.parquet"
+    _make_dataset(data)
+    db = tmp_path / "out.db"
+    stop = threading.Event()
+
+    t = threading.Thread(
+        target=loader.run_continuous_until,
+        args=(str(data), str(db), stop),
+        kwargs={"interval": 0.1},
+    )
+    t.start()
+    time.sleep(0.2)
+    stop.set()
+    t.join(timeout=1)
+
+    conn = sqlite3.connect(db)
+    count = conn.execute("SELECT COUNT(*) FROM contracts").fetchone()[0]
+    conn.close()
+    assert count > 0

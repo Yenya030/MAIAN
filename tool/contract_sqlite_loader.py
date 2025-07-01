@@ -4,6 +4,7 @@ import argparse
 import os
 import sqlite3
 import time
+import threading
 from typing import Dict, Optional
 
 import pyarrow.dataset as ds
@@ -180,6 +181,33 @@ def run_continuous(
             break
         rounds += 1
         time.sleep(interval)
+
+
+def run_continuous_until(
+    parquet_path: str,
+    db_path: str,
+    stop_event: threading.Event,
+    *,
+    interval: float = 5.0,
+    page_rows: int = 2000,
+    size_limit_mb: float = DEFAULT_LIMIT_MB,
+) -> None:
+    """Run continuous updates until ``stop_event`` is set or size limit is hit."""
+
+    limit_bytes = size_limit_mb * 1024 * 1024
+    while not stop_event.is_set():
+        if os.path.exists(db_path) and os.path.getsize(db_path) >= limit_bytes:
+            break
+        update_contract_db(
+            parquet_path,
+            db_path,
+            size_limit_mb=size_limit_mb,
+            page_rows=page_rows,
+        )
+        if os.path.exists(db_path) and os.path.getsize(db_path) >= limit_bytes:
+            break
+        if stop_event.wait(interval):
+            break
 
 
 def main() -> None:
