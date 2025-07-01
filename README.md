@@ -69,6 +69,26 @@ key set the ``BIGQUERY_API_KEY`` environment variable and provide your project
 ID via ``BIGQUERY_PROJECT_ID`` or the constructor. Always choose a small block
 window to keep the queried data under the free limit.
 
+### Using AWS Open Data
+
+Contract bytecode is also available through the AWS Open-Data program as
+Parquet dumps. The ``DataGetterAWSParquet`` helper reads these files from a
+local directory or an S3 bucket. Install ``pyarrow`` and point the getter to
+the dataset path:
+
+```bash
+pip install pyarrow
+```
+
+```python
+from data_getters import DataGetterAWSParquet
+
+getter = DataGetterAWSParquet("s3://bucket/path")
+for page in getter.fetch_chunk(100000, 100100):
+    for address, bytecode in page:
+        print(address, len(bytecode))
+```
+
 ## Installation
 
 Maian requires Python 3.8 or newer. Install the Python dependencies using:
