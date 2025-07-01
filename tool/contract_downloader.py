@@ -1,13 +1,16 @@
 import json
+import logging
 import os
 from pathlib import Path
-from typing import List, Dict, Iterable
+from typing import Iterable, List, Dict
 
 import requests
 from web3 import Web3
 
 DEFAULT_LIMIT_MB = 8
 API_URL = "https://api.etherscan.io/api"
+
+logger = logging.getLogger(__name__)
 
 
 class DataSource:
@@ -34,6 +37,8 @@ class EtherscanSource(DataSource):
             "apikey": self.api_key,
         }
         resp = requests.get(API_URL, params=params, timeout=10)
+        logger.info("GET %s -> %s", getattr(resp, "url", API_URL), resp.status_code)
+        logger.debug("Response length: %d", len(getattr(resp, "content", b"")))
         resp.raise_for_status()
         data = resp.json()
         return int(data["result"], 16)
@@ -52,19 +57,20 @@ class EtherscanSource(DataSource):
         if self.verified_only:
             params["filter"] = "verified"
         resp = requests.get(API_URL, params=params, timeout=10)
+        logger.info("GET %s -> %s", getattr(resp, "url", API_URL), resp.status_code)
+        logger.debug("Response length: %d", len(getattr(resp, "content", b"")))
         resp.raise_for_status()
         data = resp.json()
         if data.get("status") != "1":
             return []
         out = []
         for item in data.get("result", []):
-            out.append(
-                {
-                    "address": item.get("ContractAddress") or item.get("address"),
-                    "bytecode": item.get("Bytecode") or item.get("bytecode"),
-                    "block": int(item.get("BlockNumber") or item.get("block")),
-                }
-            )
+            addr = item.get("ContractAddress") or item.get("address")
+            bytecode = item.get("Bytecode") or item.get("bytecode")
+            block_val = item.get("BlockNumber") or item.get("block")
+            if addr is None or bytecode is None or block_val is None:
+                raise ValueError("Malformed response item")
+            out.append({"address": addr, "bytecode": bytecode, "block": int(block_val)})
         return out
 
 
@@ -91,10 +97,17 @@ class RPCSource(DataSource):
 
     def fetch(self, start_block: int, end_block: int) -> List[Dict]:
         contracts = []
+        logger.info(
+            "Scanning blocks %d-%d via %s",
+            start_block,
+            end_block,
+            getattr(getattr(self.w3, "provider", None), "endpoint_uri", "provider"),
+        )
         for num in range(start_block, end_block + 1):
             block = self.w3.eth.get_block(num, full_transactions=True)
             for addr in self._gather_candidate_addresses(block):
                 code = self.w3.eth.get_code(addr)
+                logger.debug("Fetched code for %s (%d bytes)", addr, len(code))
                 if code and len(code) > 0:
                     contracts.append(
                         {
@@ -146,19 +159,20 @@ def fetch_contracts(api_key: str, start_block: int, end_block: int) -> List[Dict
         "apikey": api_key,
     }
     resp = requests.get(API_URL, params=params, timeout=10)
+    logger.info("GET %s -> %s", getattr(resp, "url", API_URL), resp.status_code)
+    logger.debug("Response length: %d", len(getattr(resp, "content", b"")))
     resp.raise_for_status()
     data = resp.json()
     if data.get("status") != "1":
         return []
     out = []
     for item in data.get("result", []):
-        out.append(
-            {
-                "address": item.get("ContractAddress") or item.get("address"),
-                "bytecode": item.get("Bytecode") or item.get("bytecode"),
-                "block": int(item.get("BlockNumber") or item.get("block")),
-            }
-        )
+        addr = item.get("ContractAddress") or item.get("address")
+        bytecode = item.get("Bytecode") or item.get("bytecode")
+        block_val = item.get("BlockNumber") or item.get("block")
+        if addr is None or bytecode is None or block_val is None:
+            raise ValueError("Malformed response item")
+        out.append({"address": addr, "bytecode": bytecode, "block": int(block_val)})
     return out
 
 
@@ -172,6 +186,10 @@ def _prepend_with_limit(path: Path, lines: List[str], limit: int) -> List[str]:
         removed = all_lines.pop()
         size -= len(removed.encode("utf-8"))
     path.write_text("".join(all_lines), encoding="utf-8")
+    # Validate JSON integrity after writing to detect truncation
+    for ln in all_lines:
+        obj = json.loads(ln)
+        assert "bytecode" in obj and obj["bytecode"] is not None
     return all_lines
 
 
@@ -199,8 +217,13 @@ def update_contract_store(
         # current block as the starting point. Otherwise continue from the
         # latest recorded block.
         newest = meta.get("newest_block")
-        end_block = source.latest_block()
-        start_block = end_block if newest is None else newest + 1
+        current = source.latest_block()
+        if newest is None:
+            start_block = current
+            end_block = current
+        else:
+            end_block = current
+            start_block = newest + 1
     elif start_block is None:
         start_block = end_block
     elif end_block is None:
@@ -218,6 +241,8 @@ def update_contract_store(
         return
 
     contracts = source.fetch(start_block, end_block)
+    for c in contracts:
+        assert c.get("address") and c.get("bytecode") is not None
     if not contracts:
         save_metadata(meta, metadata_file)
         return

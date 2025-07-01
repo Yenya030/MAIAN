@@ -53,6 +53,10 @@ def test_prepend_and_limit(tmp_path):
 def test_get_latest_block(monkeypatch):
     def fake_get(url, params=None, timeout=10):
         class R:
+            def __init__(self):
+                self.status_code = 200
+                self.url = url
+                self.content = b'{}'
             def raise_for_status(self):
                 pass
             def json(self):
@@ -69,6 +73,10 @@ def test_etherscan_verified(monkeypatch):
     def fake_get(url, params=None, timeout=10):
         captured['params'] = params
         class R:
+            def __init__(self):
+                self.status_code = 200
+                self.url = url
+                self.content = b'{}'
             def raise_for_status(self):
                 pass
 
@@ -90,6 +98,10 @@ def test_etherscan_latest_block(monkeypatch):
     def fake_get(url, params=None, timeout=10):
         captured['params'] = params
         class R:
+            def __init__(self):
+                self.status_code = 200
+                self.url = url
+                self.content = b'{}'
             def raise_for_status(self):
                 pass
 
@@ -122,6 +134,10 @@ def test_etherscan_fetch_parsing(monkeypatch):
     def fake_get(url, params=None, timeout=10):
         captured['params'] = params
         class R:
+            def __init__(self):
+                self.status_code = 200
+                self.url = url
+                self.content = b'{}'
             def raise_for_status(self):
                 pass
 

@@ -18,6 +18,11 @@ Unique scanning:
 
 Any new scripts or modules should include simple unit tests under `tests/` and should avoid network calls during tests by using mocks.
 
+Validation steps:
+- Network fetch helpers now log request URLs, HTTP status codes, and response lengths.
+- Contract data is validated before and after writing to detect truncation.
+- Run `pytest -q` after installing dependencies to verify these checks.
+
 Additional tools:
 
 - `contract_stats.py` can save statistics about contracts to a CSV file. Run it with
@@ -29,8 +34,8 @@ Additional tools:
   written to `contracts/EtherscanVerified.jsonl`. A second source reads blocks
   from an RPC endpoint (for example Infura) and follows the same metadata
   scheme.
-  When no metadata exists and no block range is provided, the downloader starts
-  from the latest block only.
+  When no metadata exists and no block range is provided, the downloader uses
+  the current `eth_blockNumber` as both start and end block.
 - Sample outputs used in the tests live in `contracts/etherscan.jsonl` and
   `contracts/infura.jsonl` alongside their metadata files.
 
