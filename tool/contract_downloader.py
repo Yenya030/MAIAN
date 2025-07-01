@@ -4,6 +4,10 @@ import os
 from pathlib import Path
 from typing import Iterable, List, Dict
 
+import pyarrow.dataset as ds
+
+from data_getters import DataGetterAWSParquet
+
 import requests
 from web3 import Web3
 
@@ -116,6 +120,24 @@ class RPCSource(DataSource):
                             "block": num,
                         }
                     )
+        return contracts
+
+
+class ParquetSource(DataSource):
+    """Fetch contracts from a Parquet dataset (local or S3)."""
+
+    def __init__(self, path: str) -> None:
+        self._getter = DataGetterAWSParquet(path)
+
+    def latest_block(self) -> int:
+        table = self._getter._dataset.to_table(columns=["block_number"])
+        return max(table["block_number"].to_pylist())
+
+    def fetch(self, start_block: int, end_block: int) -> List[Dict]:
+        contracts = []
+        for page in self._getter.fetch_chunk(start_block, end_block):
+            for addr, code, blk in page:
+                contracts.append({"address": addr, "bytecode": code, "block": blk})
         return contracts
 
 

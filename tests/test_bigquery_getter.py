@@ -4,7 +4,7 @@ import sys
 import pytest
 
 root_dir = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(root_dir / 'src'))
+sys.path.insert(0, str(root_dir / 'tool'))
 
 from data_getters import DataGetterBigQuery
 from data_getters import bigquery_getter
