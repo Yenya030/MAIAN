@@ -53,6 +53,8 @@ Additional networks can be added to the tool in the future.
 The repository also includes a ``contract_downloader.py`` script for gathering
 bytecode in bulk. Contracts are stored in ``contracts/contracts.jsonl`` together
 with a metadata file describing the covered block range.
+The full download logic is explained in
+[`docs/data_download_flow.md`](docs/data_download_flow.md).
 
 ### Using AWS Open Data
 
