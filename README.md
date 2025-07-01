@@ -63,7 +63,15 @@ The tool keeps track of the scanned block range in a `meta` table and enforces
 a configurable size limit (40 MB by default).
 
 ```
-python tool/contract_sqlite_loader.py <dataset> contracts.db
+python tool/contract_sqlite_loader.py contracts.db
+```
+
+The loader defaults to the AWS Open-Data bucket
+`aws-public-blockchain` (`v1.0/eth/contracts/`).
+Provide a custom dataset path as the first argument if needed:
+
+```
+python tool/contract_sqlite_loader.py /path/to/parquet contracts.db
 ```
 
 Use `--once` to fetch a single batch instead of running continuously.
