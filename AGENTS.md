@@ -23,7 +23,10 @@ Additional tools:
 - `contract_stats.py` can save statistics about contracts to a CSV file. Run it with
   `--output-file <file>` to specify the destination (default `contract_stats.csv`).
   Use `--block-range <N>` to count contracts in the last `N` blocks ending at the latest block.
-- `contract_downloader.py` fetches bytecode from Etherscan and stores it in
-  `contracts/contracts.jsonl`. Metadata about the stored block range and file
-  size lives in `contracts/metadata.json`.
+- `contract_downloader.py` can fetch bytecode from different sources. When using
+  the Etherscan API it stores contracts in `contracts/contracts.jsonl` and
+  tracks the block range in `contracts/metadata.json`. Verified contracts are
+  written to `contracts/EtherscanVerified.jsonl`. A second source reads blocks
+  from an RPC endpoint (for example Infura) and follows the same metadata
+  scheme.
 
