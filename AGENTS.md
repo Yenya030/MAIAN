@@ -28,16 +28,10 @@ Additional tools:
 - `contract_stats.py` can save statistics about contracts to a CSV file. Run it with
   `--output-file <file>` to specify the destination (default `contract_stats.csv`).
   Use `--block-range <N>` to count contracts in the last `N` blocks ending at the latest block.
-- `contract_downloader.py` can fetch bytecode from different sources. When using
-  the Etherscan API it stores contracts in `contracts/contracts.jsonl` and
-  tracks the block range in `contracts/metadata.json`. Verified contracts are
-  written to `contracts/EtherscanVerified.jsonl`. A second source reads blocks
-  from an RPC endpoint (for example Infura) and follows the same metadata
-  scheme.
+- `contract_downloader.py` can fetch bytecode from different sources and stores
+  contracts in `contracts/contracts.jsonl` together with a metadata file.
   When no metadata exists and no block range is provided, the downloader uses
   the current `eth_blockNumber` as both start and end block.
-- Sample outputs used in the tests live in `contracts/etherscan.jsonl` and
-  `contracts/infura.jsonl` alongside their metadata files.
 
 - A `Dockerfile` in the repository root can build a container with all
   dependencies installed. Build it using `docker build -t maian .`.

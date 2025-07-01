@@ -4,15 +4,9 @@ import os
 from pathlib import Path
 from typing import Iterable, List, Dict
 
-import pyarrow.dataset as ds
-
 from data_getters import DataGetterAWSParquet
 
-import requests
-from web3 import Web3
-
 DEFAULT_LIMIT_MB = 8
-API_URL = "https://api.etherscan.io/api"
 
 logger = logging.getLogger(__name__)
 
@@ -27,100 +21,6 @@ class DataSource:
         raise NotImplementedError
 
 
-class EtherscanSource(DataSource):
-    """Fetch contracts from the Etherscan API."""
-
-    def __init__(self, api_key: str, verified_only: bool = False) -> None:
-        self.api_key = api_key
-        self.verified_only = verified_only
-
-    def latest_block(self) -> int:
-        params = {
-            "module": "proxy",
-            "action": "eth_blockNumber",
-            "apikey": self.api_key,
-        }
-        resp = requests.get(API_URL, params=params, timeout=10)
-        logger.info("GET %s -> %s", getattr(resp, "url", API_URL), resp.status_code)
-        logger.debug("Response length: %d", len(getattr(resp, "content", b"")))
-        resp.raise_for_status()
-        data = resp.json()
-        return int(data["result"], 16)
-
-    def fetch(self, start_block: int, end_block: int) -> List[Dict]:
-        params = {
-            "module": "contract",
-            "action": "getcontractsbytecode",
-            "startblock": start_block,
-            "endblock": end_block,
-            "page": 1,
-            "offset": 100,
-            "sort": "desc",
-            "apikey": self.api_key,
-        }
-        if self.verified_only:
-            params["filter"] = "verified"
-        resp = requests.get(API_URL, params=params, timeout=10)
-        logger.info("GET %s -> %s", getattr(resp, "url", API_URL), resp.status_code)
-        logger.debug("Response length: %d", len(getattr(resp, "content", b"")))
-        resp.raise_for_status()
-        data = resp.json()
-        if data.get("status") != "1":
-            return []
-        out = []
-        for item in data.get("result", []):
-            addr = item.get("ContractAddress") or item.get("address")
-            bytecode = item.get("Bytecode") or item.get("bytecode")
-            block_val = item.get("BlockNumber") or item.get("block")
-            if addr is None or bytecode is None or block_val is None:
-                raise ValueError("Malformed response item")
-            out.append({"address": addr, "bytecode": bytecode, "block": int(block_val)})
-        return out
-
-
-class RPCSource(DataSource):
-    """Fetch contracts by scanning blocks via a Web3 provider."""
-
-    def __init__(self, provider_url: str) -> None:
-        self.w3 = Web3(Web3.HTTPProvider(provider_url))
-        if not self.w3.is_connected():
-            raise RuntimeError("Web3 provider not available")
-
-    def latest_block(self) -> int:
-        return self.w3.eth.block_number
-
-    def _gather_candidate_addresses(self, block) -> Iterable[str]:
-        for tx in block.transactions:
-            to_addr = getattr(tx, "to", None)
-            if to_addr:
-                yield to_addr
-            else:
-                receipt = self.w3.eth.get_transaction_receipt(tx.hash)
-                if receipt and getattr(receipt, "contractAddress", None):
-                    yield receipt.contractAddress
-
-    def fetch(self, start_block: int, end_block: int) -> List[Dict]:
-        contracts = []
-        logger.info(
-            "Scanning blocks %d-%d via %s",
-            start_block,
-            end_block,
-            getattr(getattr(self.w3, "provider", None), "endpoint_uri", "provider"),
-        )
-        for num in range(start_block, end_block + 1):
-            block = self.w3.eth.get_block(num, full_transactions=True)
-            for addr in self._gather_candidate_addresses(block):
-                code = self.w3.eth.get_code(addr)
-                logger.debug("Fetched code for %s (%d bytes)", addr, len(code))
-                if code and len(code) > 0:
-                    contracts.append(
-                        {
-                            "address": addr,
-                            "bytecode": code.hex(),
-                            "block": num,
-                        }
-                    )
-        return contracts
 
 
 class ParquetSource(DataSource):
@@ -159,43 +59,6 @@ def save_metadata(meta: Dict, path: str | Path) -> None:
         json.dump(meta, fh)
 
 
-def get_latest_block(api_key: str) -> int:
-    """Return the latest block number according to Etherscan."""
-    params = {"module": "proxy", "action": "eth_blockNumber", "apikey": api_key}
-    resp = requests.get(API_URL, params=params, timeout=10)
-    resp.raise_for_status()
-    data = resp.json()
-    return int(data["result"], 16)
-
-
-def fetch_contracts(api_key: str, start_block: int, end_block: int) -> List[Dict]:
-    """Return contract info between *start_block* and *end_block*."""
-    params = {
-        "module": "contract",
-        "action": "getcontractsbytecode",
-        "startblock": start_block,
-        "endblock": end_block,
-        "page": 1,
-        "offset": 100,
-        "sort": "desc",
-        "apikey": api_key,
-    }
-    resp = requests.get(API_URL, params=params, timeout=10)
-    logger.info("GET %s -> %s", getattr(resp, "url", API_URL), resp.status_code)
-    logger.debug("Response length: %d", len(getattr(resp, "content", b"")))
-    resp.raise_for_status()
-    data = resp.json()
-    if data.get("status") != "1":
-        return []
-    out = []
-    for item in data.get("result", []):
-        addr = item.get("ContractAddress") or item.get("address")
-        bytecode = item.get("Bytecode") or item.get("bytecode")
-        block_val = item.get("BlockNumber") or item.get("block")
-        if addr is None or bytecode is None or block_val is None:
-            raise ValueError("Malformed response item")
-        out.append({"address": addr, "bytecode": bytecode, "block": int(block_val)})
-    return out
 
 
 def _prepend_with_limit(path: Path, lines: List[str], limit: int) -> List[str]:

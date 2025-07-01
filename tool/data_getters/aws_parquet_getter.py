@@ -4,7 +4,7 @@ from typing import Iterable, List, Tuple
 
 import pyarrow.dataset as ds
 
-from .bigquery_getter import DataGetter
+from .base import DataGetter
 
 
 class DataGetterAWSParquet(DataGetter):
