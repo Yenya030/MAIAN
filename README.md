@@ -48,6 +48,15 @@ $ python fetch_and_check.py --network mainnet --count 5
 
 Additional networks can be added to the tool in the future.
 
+### Contract Downloader
+
+The repository also includes a ``contract_downloader.py`` script for gathering
+bytecode in bulk. It can pull data from the Etherscan API or from an RPC
+endpoint such as Infura. When the ``--verified`` option is used the tool stores
+results in ``contracts/EtherscanVerified.jsonl``; otherwise contracts are stored
+in ``contracts/contracts.jsonl`` together with a metadata file describing the
+covered block range.
+
 ## Installation
 
 Maian requires Python 3.8 or newer. Install the Python dependencies using:
