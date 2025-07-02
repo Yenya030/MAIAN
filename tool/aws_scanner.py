@@ -4,8 +4,10 @@ import argparse
 import json
 import logging
 import os
-import time
+from contextlib import redirect_stdout
 from typing import Callable, Optional
+import io
+import sys
 
 import pyarrow.dataset as ds
 
@@ -40,10 +42,10 @@ def _save_state(path: str, state: dict) -> None:
 
 
 def make_live_progress() -> Callable[[str], None]:
-    """Return a progress callback that prints updates on one line."""
+    """Return a progress callback that prints updates on a new line."""
 
     def _cb(msg: str) -> None:
-        print(f"\r{msg}", end="", flush=True)
+        print(msg, file=sys.stderr, flush=True)
 
     return _cb
 
@@ -56,6 +58,7 @@ def scan_once(
     batch_blocks: int = 1000,
     page_rows: int = 2000,
     progress_cb: Optional[Callable[[str], None]] = None,
+    verbose: bool = False,
 ) -> bool:
     """Process a single batch of contracts.
 
@@ -85,7 +88,12 @@ def scan_once(
     with open(report_file, "a", encoding="utf-8") as out:
         for page in getter.fetch_chunk(start_block, end_block):
             for row in page:
-                res = run_checks(row["ByteCode"], row["Address"])
+                if verbose:
+                    res = run_checks(row["ByteCode"], row["Address"])
+                else:
+                    buf = io.StringIO()
+                    with redirect_stdout(buf):
+                        res = run_checks(row["ByteCode"], row["Address"])
                 entry = {
                     "address": row["Address"],
                     "block": row["BlockNumber"],
@@ -110,12 +118,12 @@ def scan_once(
 def run_continuous(
     parquet_path: str,
     *,
-    interval: float = 5.0,
     batch_blocks: int = 1000,
     state_file: str = DEFAULT_STATE_FILE,
     report_file: str = DEFAULT_REPORT_FILE,
     page_rows: int = 2000,
     max_rounds: Optional[int] = None,
+    verbose: bool = False,
 ) -> None:
     """Continuously scan the dataset until stopped."""
     rounds = 0
@@ -129,9 +137,9 @@ def run_continuous(
             batch_blocks=batch_blocks,
             page_rows=page_rows,
             progress_cb=make_live_progress(),
+            verbose=verbose,
         )
         rounds += 1
-        time.sleep(interval)
 
 
 def main() -> None:
@@ -144,7 +152,6 @@ def main() -> None:
     )
     parser.add_argument("--state-file", default=DEFAULT_STATE_FILE)
     parser.add_argument("--report-file", default=DEFAULT_REPORT_FILE)
-    parser.add_argument("--interval", type=float, default=5.0)
     parser.add_argument(
         "--batch-blocks", type=int, default=1000,
         help="number of blocks to scan per iteration"
@@ -161,18 +168,23 @@ def main() -> None:
         default=None,
         help="maximum number of scan iterations in continuous mode",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="show detailed check output",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     if args.continuous:
         run_continuous(
             args.dataset,
-            interval=args.interval,
             batch_blocks=args.batch_blocks,
             state_file=args.state_file,
             report_file=args.report_file,
             page_rows=args.page_rows,
             max_rounds=args.max_rounds,
+            verbose=args.verbose,
         )
     else:
         scan_once(
@@ -182,6 +194,7 @@ def main() -> None:
             batch_blocks=args.batch_blocks,
             page_rows=args.page_rows,
             progress_cb=make_live_progress(),
+            verbose=args.verbose,
         )
 
 

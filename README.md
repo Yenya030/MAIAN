@@ -157,10 +157,10 @@ python tool/aws_scanner.py             # use default dataset
 python tool/aws_scanner.py s3://bucket/path  # custom path
 ```
 
-Add `--continuous` to keep scanning in a loop. By default the tool inspects
-1000 blocks per iteration, starting from the latest block on the first run and
-moving backwards. Use `--batch-blocks` to change the range, `--interval` to
-adjust the pause between runs and `--max-rounds` to limit the number of loops.
+Add `--continuous` to keep scanning in a loop. Each iteration handles the
+newest 1000 blocks with no delay between rounds. Use `--batch-blocks` to change
+the range and `--max-rounds` to limit the number of loops. Pass `--verbose` to
+see the detailed output from the underlying checks.
 
 ## Installation
 

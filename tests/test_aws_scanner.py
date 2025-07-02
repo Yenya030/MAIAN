@@ -94,8 +94,8 @@ def test_scan_once_multiple_blocks(tmp_path, monkeypatch):
 def test_make_live_progress_writes(capsys):
     cb = aws_scanner.make_live_progress()
     cb("hello")
-    out = capsys.readouterr().out
-    assert "hello" in out
+    err = capsys.readouterr().err
+    assert "hello" in err
 
 
 def test_main_runs_once_by_default(monkeypatch, tmp_path):

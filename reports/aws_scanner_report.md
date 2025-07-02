@@ -25,5 +25,6 @@ The default dataset path is
 `s3://aws-public-blockchain/v1.0/eth/contracts/`.
 
 Add `--continuous` to keep scanning in a loop. Each pass handles 1000 blocks by
-default. Change this with `--batch-blocks`, use `--interval` to adjust the pause
-between iterations and `--max-rounds` to limit the number of loops.
+default. Change this with `--batch-blocks` and use `--max-rounds` to limit the
+number of loops. Progress is printed on stderr for each contract. Pass
+`--verbose` to see the detailed output from the checks.
