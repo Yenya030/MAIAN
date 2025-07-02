@@ -109,6 +109,18 @@ The `db_head.py` helper prints the first few rows stored in the SQLite database.
 python tool/db_head.py contracts.db --count 3
 ```
 
+### Database Checker
+
+Contracts stored in a SQLite database can be scanned offline with
+`db_checker.py`. Provide the database path via `--db` and an optional
+`--limit` to restrict how many entries are processed. A JSON report is written
+to `reports/db_scan_report.json` by default and progress is printed after each
+contract.
+
+```
+python tool/db_checker.py --db contracts.db --limit 10
+```
+
 
 ### Using AWS Open Data
 
