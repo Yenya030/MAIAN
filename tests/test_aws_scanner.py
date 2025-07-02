@@ -68,7 +68,7 @@ def test_scan_once_resumes_and_handles_new_blocks(tmp_path, monkeypatch):
     st = json.loads(state.read_text())
     assert st['next_block'] == 3
     lines = report.read_text().splitlines()
-    assert len(lines) == 2
+    assert len(lines) == 0
 
 
 def test_scan_once_multiple_blocks(tmp_path, monkeypatch):
@@ -88,7 +88,7 @@ def test_scan_once_multiple_blocks(tmp_path, monkeypatch):
     # next_block should move back by 2 blocks
     assert st['next_block'] == 2
     lines = report.read_text().splitlines()
-    assert len(lines) == 2
+    assert len(lines) == 0
 
 
 def test_make_live_progress_writes(capsys):

@@ -93,7 +93,13 @@ def scan_once(
                     "prodigal": bool(res.get("prodigal")),
                     "greedy": bool(res.get("greedy")),
                 }
-                out.write(json.dumps(entry) + "\n")
+                if entry["suicidal"] or entry["prodigal"] or entry["greedy"]:
+                    out.write(json.dumps(entry) + "\n")
+                    logger.info(
+                        "vulnerable address %s at block %d",
+                        entry["address"],
+                        entry["block"],
+                    )
                 processed += 1
                 if progress_cb:
                     progress_cb(
@@ -110,7 +116,7 @@ def scan_once(
 def run_continuous(
     parquet_path: str,
     *,
-    interval: float = 5.0,
+    interval: float = 0.0,
     batch_blocks: int = 1000,
     state_file: str = DEFAULT_STATE_FILE,
     report_file: str = DEFAULT_REPORT_FILE,
@@ -131,7 +137,8 @@ def run_continuous(
             progress_cb=make_live_progress(),
         )
         rounds += 1
-        time.sleep(interval)
+        if interval > 0:
+            time.sleep(interval)
 
 
 def main() -> None:
@@ -144,7 +151,7 @@ def main() -> None:
     )
     parser.add_argument("--state-file", default=DEFAULT_STATE_FILE)
     parser.add_argument("--report-file", default=DEFAULT_REPORT_FILE)
-    parser.add_argument("--interval", type=float, default=5.0)
+    parser.add_argument("--interval", type=float, default=0.0)
     parser.add_argument(
         "--batch-blocks", type=int, default=1000,
         help="number of blocks to scan per iteration"
