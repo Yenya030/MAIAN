@@ -173,6 +173,16 @@ python tool/aws_speed.py              # use default dataset
 python tool/aws_speed.py s3://bucket/path --blocks 5000
 ```
 
+### BigQuery Downloader
+
+`bigquery_contracts.py` retrieves contract bytecode from the Google BigQuery
+Ethereum dataset. Provide a start and end block to download and optionally a
+custom table name via `--dataset`.
+
+```bash
+python tool/bigquery_contracts.py --start-block 1000000 --end-block 1000100
+```
+
 ## Installation
 
 Maian requires Python 3.8 or newer. Install the Python dependencies using:
