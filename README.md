@@ -142,6 +142,26 @@ for page in getter.fetch_chunk(100000, 100100):
         print(row["Address"], row["BlockNumber"])
 ```
 
+### AWS Scanner
+
+`aws_scanner.py` inspects contracts from the AWS dataset. By default it
+processes the newest 1000 blocks and exits. Progress updates showing the current
+block and number of checked contracts are printed live to the terminal. The
+script stores its state in `reports/aws_scanner_state.json` and appends scan
+results to `reports/aws_scan_results.jsonl`. When no dataset path is provided,
+the tool uses the AWS Open-Data bucket
+`s3://aws-public-blockchain/v1.0/eth/contracts/`.
+
+```bash
+python tool/aws_scanner.py             # use default dataset
+python tool/aws_scanner.py s3://bucket/path  # custom path
+```
+
+Add `--continuous` to keep scanning in a loop. By default the tool inspects
+1000 blocks per iteration, starting from the latest block on the first run and
+moving backwards. Use `--batch-blocks` to change the range, `--interval` to
+adjust the pause between runs and `--max-rounds` to limit the number of loops.
+
 ## Installation
 
 Maian requires Python 3.8 or newer. Install the Python dependencies using:
