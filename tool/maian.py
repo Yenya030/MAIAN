@@ -50,10 +50,10 @@ if found_depend:
 
 
 
-import check_suicide 
-import check_leak 
+import check_suicide
+import check_leak
 import check_lock
-from values import MyGlobals
+from values import MyGlobals, vprint
 from blockchain import *
 from contracts import *
 
@@ -72,6 +72,7 @@ def main(args):
     parser.add_argument("--debug",        help="Print extended debug info ", action='store_true')
     parser.add_argument("--max_inv",        help="The maximal number of function invocations (default 3) ", action='store')
     parser.add_argument("--solve_timeout",        help="Z3 solver timeout in milliseconds (default 10000, i.e. 10 seconds)", action='store')
+    parser.add_argument("--verbose", help="Print progress information", action='store_true')
 
     args = parser.parse_args( args )
 
@@ -80,6 +81,7 @@ def main(args):
     if args.max_inv:        MyGlobals.max_calldepth_in_normal_search = int(args.max_inv)
     if args.solve_timeout:  MyGlobals.SOLVER_TIMEOUT = int(args.solve_timeout)
     if args.check:          MyGlobals.checktype = int(args.check)
+    if args.verbose:        MyGlobals.verbose = True
 
 
     kill_active_blockchain()
@@ -87,7 +89,7 @@ def main(args):
 
     if args.soliditycode or args.bytecode_source:
 
-        print('\n'+'=' * 100)
+        vprint('\n'+'=' * 100)
 
         read_from_blockchain = True
 
@@ -98,7 +100,7 @@ def main(args):
             compile_contract(args.soliditycode[0])
             contract_code_path = 'out/'+args.soliditycode[1]+'.bin'
             if not os.path.isfile( contract_code_path ):  
-                print('\033[91m[-] Contract %s does NOT exist\033[0m' % args.soliditycode[1] )
+                vprint('\033[91m[-] Contract %s does NOT exist\033[0m' % args.soliditycode[1])
                 return
 
             # Get the contract function hashes (used later if the contract has vulnerability)
@@ -112,27 +114,27 @@ def main(args):
         # Sending Ether has to be done prior to deployment of contract because the contract code may not allow arbitrary account to send Ether
         if 1 == MyGlobals.checktype:    
             supposed_contract_address = predict_contract_address(MyGlobals.etherbase_account)
-            print('\033[1m[ ] Sending Ether to contract %s  \033[0m' % supposed_contract_address, end='')            
+            vprint('\033[1m[ ] Sending Ether to contract %s  \033[0m' % supposed_contract_address, end='')
             execute_transactions([{'from':'0x'+MyGlobals.sendingether_account,'to':supposed_contract_address,'value':MyGlobals.send_initial_wei}])
-            print('\033[92m Sent! \033[0m')
+            vprint('\033[92m Sent! \033[0m')
 
         # Deploy the contract
         if args.soliditycode:   contract_address = deploy_contract(args.soliditycode[1], MyGlobals.etherbase_account)
         else:                   contract_address = deploy_contract(args.bytecode_source, MyGlobals.etherbase_account, True)
 
         if contract_address is None:
-            print('\033[91m[-] Cannot deploy the contract \033[0m' )
+            vprint('\033[91m[-] Cannot deploy the contract \033[0m')
             return
 
 
         # If check on leak, then make sure the contract has Ether
         if 1 == MyGlobals.checktype:
             bal = MyGlobals.web3.eth.getBalance(contract_address)
-            print('\033[1m[ ] The contract balance: %d  \033[0m' % bal, end='' )
+            vprint('\033[1m[ ] The contract balance: %d  \033[0m' % bal, end='')
             if bal > 0:
-                print('\033[92m Positive balance\033[0m')
+                vprint('\033[92m Positive balance\033[0m')
             else:
-                print('cound not send Ether to contract')
+                vprint('cound not send Ether to contract')
                 return 
 
 
@@ -148,12 +150,12 @@ def main(args):
         
     elif args.bytecode:
 
-        print('\n'+'=' * 100)
+        vprint('\n'+'=' * 100)
 
         read_from_blockchain = False
         filepath_code = args.bytecode
         if not os.path.isfile(filepath_code):  
-            print('\033[91m[-] File %s does NOT exist\033[0m' % filepath_code )
+            vprint('\033[91m[-] File %s does NOT exist\033[0m' % filepath_code)
             return
 
         with open(filepath_code,'r') as f: code = f.read(); f.close()

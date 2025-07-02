@@ -1,6 +1,14 @@
 from __future__ import print_function
 from parse_code import *
-from values import get_params, set_params, initialize_params, print_params, MyGlobals, clear_globals
+from values import (
+    get_params,
+    set_params,
+    initialize_params,
+    print_params,
+    MyGlobals,
+    clear_globals,
+    vprint,
+)
 from execute_block import *  
 
 
@@ -41,7 +49,7 @@ def run_one_check( max_call_depth, ops, contract_address, debug, read_from_block
 
 
 
-    print('\n[ ]\033[1m Search with call depth: %d   : \033[0m' % (max_call_depth) , end = '')
+    vprint('\n[ ]\033[1m Search with call depth: %d   : \033[0m' % (max_call_depth), end='')
 
 
     initialize_params(read_from_blockchain, contract_address )
@@ -65,11 +73,11 @@ def run_one_check( max_call_depth, ops, contract_address, debug, read_from_block
 def check_one_contract_on_ether_lock(contract_bytecode, contract_address, debug = False, read_from_blockchain = False):
 
 
-    print('\033[94m[ ] Check if contract is GREEDY\033[0m\n')
-    print('[ ] Contract address   : %s' % contract_address)
-    print('[ ] Contract bytecode  : %s...' % contract_bytecode[:50])
-    print('[ ] Bytecode length    : %d' % len(contract_bytecode) )
-    print('[ ] Debug              : %s' % debug)
+    vprint('\033[94m[ ] Check if contract is GREEDY\033[0m\n')
+    vprint('[ ] Contract address   : %s' % contract_address)
+    vprint('[ ] Contract bytecode  : %s...' % contract_bytecode[:50])
+    vprint('[ ] Bytecode length    : %d' % len(contract_bytecode))
+    vprint('[ ] Debug              : %s' % debug)
 
 
     global MAX_CALL_DEPTH, symbolic_vars, symbolic_sha
@@ -97,11 +105,11 @@ def check_one_contract_on_ether_lock(contract_bytecode, contract_address, debug 
     configurations = {}
     execute_one_block(ops,stack,0, trace, storage, mmemory, data, configurations,  ['STOP','RETURN'], ether_lock_can_recieve, 0, 0, debug, read_from_blockchain )
 
-    print(('\033[91m[-]' if not MyGlobals.stop_search else '\033[92m[+]')+'\033[0m \033[1mContract can receive Ether\033[0m' )
+    vprint(('\033[91m[-]' if not MyGlobals.stop_search else '\033[92m[+]') + '\033[0m \033[1mContract can receive Ether\033[0m')
 
     # If it did not find, then the contract cannot receive Ether and thus it cannot lock ether (is not bad )
     if not MyGlobals.stop_search: 
-        print('\n\033[92m[-] No lock vulnerability found because the contract cannot receive Ether \033[0m')
+        vprint('\n\033[92m[-] No lock vulnerability found because the contract cannot receive Ether \033[0m')
         return False
 
 
@@ -115,7 +123,7 @@ def check_one_contract_on_ether_lock(contract_bytecode, contract_address, debug 
     # If it does not have instructions that send Ether, then obviously it locks 
     if not code_has_instruction( ops, ['CALL','CALLCODE','DELEGATECALL','SUICIDE']) :
         #if debug: 
-        print('\033[91m[-] The code does not have CALL/SUICIDE/DELEGATECALL/CALLCODE thus is greedy !\033[0m')
+        vprint('\033[91m[-] The code does not have CALL/SUICIDE/DELEGATECALL/CALLCODE thus is greedy !\033[0m')
         return True
     if debug: print_code( contract_bytecode, ops )
 
@@ -133,11 +141,11 @@ def check_one_contract_on_ether_lock(contract_bytecode, contract_address, debug 
 
         run_one_check( i, ops, contract_address, debug, read_from_blockchain )
         if MyGlobals.stop_search: 
-            print('\n\033[92m[+] No locking vulnerability found \033[0m')
+            vprint('\n\033[92m[+] No locking vulnerability found \033[0m')
             return False
 
 
-    print('\n\n\033[91m[-] Locking vulnerability found! \033[0m' )
+    vprint('\n\n\033[91m[-] Locking vulnerability found! \033[0m')
     return True
 
         
