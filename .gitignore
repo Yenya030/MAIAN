@@ -1,0 +1,19 @@
+# SQLite database files
+*.sqlite
+*.sqlite3
+/db/*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+
+# Generic database dumps
+*.sql
+*.sql.gz
+*.sql.xz
+*.dump
+*.backup
+
+# Generic database binaries
+*.db
+
+# Database logs
+*.log
