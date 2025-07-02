@@ -242,7 +242,7 @@ def execute_one_block( ops , stack , pos , trace, storage, mmemory, data, config
 
                 # First find the symbolic variable name
                 text = str(addr['z3'])
-                regex = re.compile('input[0-9]*\[[0-9 ]*\]')
+                regex = re.compile(r'input[0-9]*\[[0-9 ]*\]')
                 match = re.search( regex, text)
                 if match:
                     sm = text[match.start():match.end()]
@@ -250,7 +250,7 @@ def execute_one_block( ops , stack , pos , trace, storage, mmemory, data, config
                     # assign random (offset) address as value for the variable
                     random_address = get_hash(sm) >> 64
                     
-                    r2 = re.compile('\[[0-9 ]*\]')
+                    r2 = re.compile(r'\[[0-9 ]*\]')
                     indmat = re.search( r2, sm )
                     index = -2
                     if indmat:
