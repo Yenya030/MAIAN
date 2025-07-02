@@ -87,6 +87,19 @@ the database and logs progress to the console. Press ``q`` to exit.
 python tool/contract_sqlite_loader.py --gui contracts.db
 ```
 
+### Reverse Loader
+
+`contract_sqlite_descender.py` is a simplified variant that works
+backwards from the latest block, keeping only the most recent rows
+until a size limit is reached. The script exposes flags for the output
+database, size limit and chunk size:
+
+```bash
+python tool/contract_sqlite_descender.py --db contracts.db --size-limit 40 --page-rows 1000
+```
+
+Use `--gui` to display the lowest processed block in a tiny curses UI.
+
 ### Viewing Database Entries
 
 The `db_head.py` helper prints the first few rows stored in the SQLite database.
