@@ -32,6 +32,8 @@ Additional tools:
   contracts in `contracts/contracts.jsonl` together with a metadata file.
   When no metadata exists and no block range is provided, the downloader uses
   the current `eth_blockNumber` as both start and end block.
+- `db_checker.py` scans contracts stored in a SQLite database and writes a JSON
+  report to `reports/db_scan_report.json` while showing live progress.
 
 - A `Dockerfile` in the repository root can build a container with all
   dependencies installed. Build it using `docker build -t maian .`.
