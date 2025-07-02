@@ -1,6 +1,7 @@
 from pathlib import Path
 import json
 import types
+import logging
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -169,4 +170,25 @@ def test_main_uses_default_dataset(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["aws_scanner.py"])  # no dataset arg
     aws_scanner.main()
     assert captured["path"] == aws_scanner.DEFAULT_PARQUET_DATASET
+
+
+def test_scan_once_logs(monkeypatch, tmp_path, caplog):
+    data = tmp_path / "data.parquet"
+    _make_dataset(data, [1])
+    state = tmp_path / "state.json"
+    report = tmp_path / "report.jsonl"
+    monkeypatch.setattr(aws_scanner, "run_checks", lambda b, a: {})
+    with caplog.at_level(logging.INFO):
+        aws_scanner.scan_once(
+            str(data),
+            state_file=str(state),
+            report_file=str(report),
+            batch_blocks=1,
+            page_rows=1,
+        )
+    log_text = "\n".join(rec.message for rec in caplog.records)
+    assert "retrieving blocks" in log_text
+    assert "retrieved" in log_text
+    assert "scanning" in log_text
+    assert "completed scan" in log_text
 

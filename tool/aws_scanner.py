@@ -78,12 +78,25 @@ def scan_once(
     if start_block > end_block:
         return False
 
-    logger.info("scanning blocks %d-%d", start_block, end_block)
+    logger.info("retrieving blocks %d-%d", start_block, end_block)
+    t_fetch = time.time()
+    pages = list(getter.fetch_chunk(start_block, end_block))
+    fetch_time = time.time() - t_fetch
+    num_blocks = end_block - start_block + 1
+    num_contracts = sum(len(p) for p in pages)
+    logger.info(
+        "retrieved %d blocks with %d contracts in %.2fs",
+        num_blocks,
+        num_contracts,
+        fetch_time,
+    )
+    logger.info("scanning %d contracts", num_contracts)
 
     processed = 0
+    t_scan = time.time()
     os.makedirs(os.path.dirname(report_file), exist_ok=True)
     with open(report_file, "a", encoding="utf-8") as out:
-        for page in getter.fetch_chunk(start_block, end_block):
+        for page in pages:
             for row in page:
                 res = run_checks(row["ByteCode"], row["Address"])
                 entry = {
@@ -105,6 +118,13 @@ def scan_once(
                     progress_cb(
                         f"processed {processed} (block {row['BlockNumber']})"
                     )
+    scan_time = time.time() - t_scan
+    logger.info(
+        "completed scan of %d contracts from %d blocks in %.2fs",
+        num_contracts,
+        num_blocks,
+        scan_time,
+    )
     if progress_cb:
         print()
     state["next_block"] = start_block - 1
