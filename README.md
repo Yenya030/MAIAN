@@ -79,9 +79,9 @@ messages are printed to the console while the loader runs.
 
 ### Minimal Loader GUI
 
-``contract_sqlite_loader.py`` also supports a simple Tkinter GUI via the
-``--gui`` flag. The interface shows the current block range stored in the
-database and logs progress to the console.
+``contract_sqlite_loader.py`` also provides a small terminal interface via the
+``--gui`` flag. The curses based view shows the current block range stored in
+the database and logs progress to the console. Press ``q`` to exit.
 
 ```bash
 python tool/contract_sqlite_loader.py --gui contracts.db
