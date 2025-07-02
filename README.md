@@ -74,16 +74,17 @@ Provide a custom dataset path as the first argument if needed:
 python tool/contract_sqlite_loader.py /path/to/parquet contracts.db
 ```
 
-Use `--once` to fetch a single batch instead of running continuously.
+Use `--once` to fetch a single batch instead of running continuously. Progress
+messages are printed to the console while the loader runs.
 
 ### Minimal Loader GUI
 
-``sql_gui.py`` offers a very small Tkinter based interface for
-``contract_sqlite_loader.py``. It shows the current block range stored in the
-database and lets you stop the loader.
+``contract_sqlite_loader.py`` also supports a simple Tkinter GUI via the
+``--gui`` flag. The interface shows the current block range stored in the
+database and logs progress to the console.
 
 ```bash
-python tool/sql_gui.py contracts.db
+python tool/contract_sqlite_loader.py --gui contracts.db
 ```
 
 ### Viewing Database Entries

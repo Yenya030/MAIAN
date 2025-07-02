@@ -28,11 +28,14 @@ class LoaderApp(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._kill)
         self.after(100, self._start)
 
+    def _log(self, msg: str) -> None:
+        print(msg)
+
     def _start(self) -> None:
         self.thread = threading.Thread(
             target=run_continuous_until,
             args=(self.parquet_path, self.db_path, self.stop_event),
-            kwargs={"interval": self.interval},
+            kwargs={"interval": self.interval, "progress_cb": self._log},
             daemon=True,
         )
         self.thread.start()
@@ -49,9 +52,13 @@ class LoaderApp(tk.Tk):
             newest = meta.get("newest_block")
             oldest = meta.get("oldest_block")
             if newest and oldest:
-                self.label_var.set(f"Blocks {oldest}-{newest}")
+                msg = f"Blocks {oldest}-{newest}"
+                self.label_var.set(msg)
+                self._log(msg)
             else:
-                self.label_var.set("Waiting for blocks...")
+                msg = "Waiting for blocks..."
+                self.label_var.set(msg)
+                self._log(msg)
         if not self.stop_event.is_set():
             self.after(1000, self._update_status)
 

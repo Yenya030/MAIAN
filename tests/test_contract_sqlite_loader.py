@@ -160,3 +160,16 @@ def test_run_continuous_until_stops_on_event(tmp_path):
     count = conn.execute("SELECT COUNT(*) FROM contracts").fetchone()[0]
     conn.close()
     assert count > 0
+
+
+def test_progress_callback_invoked(tmp_path):
+    data = tmp_path / "data.parquet"
+    _make_dataset(data)
+    db = tmp_path / "out.db"
+    calls: list[str] = []
+
+    def cb(msg: str) -> None:
+        calls.append(msg)
+
+    loader.update_contract_db(str(data), str(db), progress_cb=cb)
+    assert calls

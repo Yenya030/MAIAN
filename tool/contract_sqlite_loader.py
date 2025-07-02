@@ -5,7 +5,7 @@ import os
 import sqlite3
 import time
 import threading
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 import pyarrow.dataset as ds
 
@@ -74,6 +74,7 @@ def update_contract_db(
     start_block: Optional[int] = None,
     end_block: Optional[int] = None,
     page_rows: int = 2000,
+    progress_cb: Optional[Callable[[str], None]] = None,
 ) -> bool:
     """Fetch new contracts from *parquet_path* and store them in *db_path*.
 
@@ -113,6 +114,7 @@ def update_contract_db(
             return False
 
         inserted = False
+        inserted_count = 0
         for page in getter.fetch_chunk(start_block, end_block):
             for r in page:
                 conn.execute(
@@ -121,6 +123,9 @@ def update_contract_db(
                 )
                 conn.commit()
                 inserted = True
+                inserted_count += 1
+                if progress_cb is not None:
+                    progress_cb(f"inserted {inserted_count} rows")
                 if os.path.getsize(db_path) >= limit:
                     break
             if os.path.getsize(db_path) >= limit:
@@ -144,6 +149,7 @@ def run_continuous(
     page_rows: int = 2000,
     size_limit_mb: float = DEFAULT_LIMIT_MB,
     max_rounds: Optional[int] = None,
+    progress_cb: Optional[Callable[[str], None]] = None,
 ) -> None:
     """Continuously update the database until the size limit is reached.
 
@@ -162,6 +168,9 @@ def run_continuous(
     max_rounds:
         Optional limit on how many update cycles to run. Mainly useful for
         testing.
+    progress_cb:
+        Optional callback invoked with a progress message after each inserted
+        row.
     """
 
     rounds = 0
@@ -176,6 +185,7 @@ def run_continuous(
             db_path,
             size_limit_mb=size_limit_mb,
             page_rows=page_rows,
+            progress_cb=progress_cb,
         )
         if os.path.exists(db_path) and os.path.getsize(db_path) >= limit_bytes:
             break
@@ -191,8 +201,16 @@ def run_continuous_until(
     interval: float = 5.0,
     page_rows: int = 2000,
     size_limit_mb: float = DEFAULT_LIMIT_MB,
+    progress_cb: Optional[Callable[[str], None]] = None,
 ) -> None:
-    """Run continuous updates until ``stop_event`` is set or size limit is hit."""
+    """Run continuous updates until ``stop_event`` is set or size limit is hit.
+
+    Parameters
+    ----------
+    progress_cb:
+        Optional callback invoked with a progress message after each inserted
+        row.
+    """
 
     limit_bytes = size_limit_mb * 1024 * 1024
     while not stop_event.is_set():
@@ -203,6 +221,7 @@ def run_continuous_until(
             db_path,
             size_limit_mb=size_limit_mb,
             page_rows=page_rows,
+            progress_cb=progress_cb,
         )
         if os.path.exists(db_path) and os.path.getsize(db_path) >= limit_bytes:
             break
@@ -224,6 +243,7 @@ def main() -> None:
     parser.add_argument("--interval", type=float, default=5.0, help="poll interval for continuous mode")
     parser.add_argument("--size-limit", type=float, default=DEFAULT_LIMIT_MB, help="database size limit in MB")
     parser.add_argument("--once", action="store_true", help="run a single update instead of continuous mode")
+    parser.add_argument("--gui", action="store_true", help="launch simple GUI")
     args = parser.parse_args()
     if len(args.paths) == 1:
         parquet_path = DEFAULT_PARQUET_DATASET
@@ -233,12 +253,18 @@ def main() -> None:
     else:
         parser.error("expected <db> or <dataset> <db>")
 
-    if args.once:
+    if args.gui:
+        from sql_gui import LoaderApp
+
+        app = LoaderApp(parquet_path, db_path, interval=args.interval)
+        app.mainloop()
+    elif args.once:
         update_contract_db(
             parquet_path,
             db_path,
             size_limit_mb=args.size_limit,
             page_rows=args.page_rows,
+            progress_cb=print,
         )
     else:
         run_continuous(
@@ -247,6 +273,7 @@ def main() -> None:
             interval=args.interval,
             page_rows=args.page_rows,
             size_limit_mb=args.size_limit,
+            progress_cb=print,
         )
 
 
