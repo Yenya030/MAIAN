@@ -11,9 +11,8 @@ import pyarrow.dataset as ds
 
 from data_getters import DataGetterAWSParquet
 from fetch_and_check import run_checks
+from contract_sqlite_loader import DEFAULT_PARQUET_DATASET
 
-
-DEFAULT_PARQUET_DATASET = "s3://aws-public-blockchain/v1.0/eth/contracts/"
 DEFAULT_STATE_FILE = "reports/aws_scanner_state.json"
 DEFAULT_REPORT_FILE = "reports/aws_scan_results.jsonl"
 
@@ -40,12 +39,21 @@ def _save_state(path: str, state: dict) -> None:
         json.dump(state, fh)
 
 
+def make_live_progress() -> Callable[[str], None]:
+    """Return a progress callback that prints updates on one line."""
+
+    def _cb(msg: str) -> None:
+        print(f"\r{msg}", end="", flush=True)
+
+    return _cb
+
+
 def scan_once(
     parquet_path: str,
     *,
     state_file: str = DEFAULT_STATE_FILE,
     report_file: str = DEFAULT_REPORT_FILE,
-    batch_blocks: int = 1,
+    batch_blocks: int = 1000,
     page_rows: int = 2000,
     progress_cb: Optional[Callable[[str], None]] = None,
 ) -> bool:
@@ -70,6 +78,8 @@ def scan_once(
     if start_block > end_block:
         return False
 
+    logger.info("scanning blocks %d-%d", start_block, end_block)
+
     processed = 0
     os.makedirs(os.path.dirname(report_file), exist_ok=True)
     with open(report_file, "a", encoding="utf-8") as out:
@@ -89,6 +99,8 @@ def scan_once(
                     progress_cb(
                         f"processed {processed} (block {row['BlockNumber']})"
                     )
+    if progress_cb:
+        print()
     state["next_block"] = start_block - 1
     state["last_known_latest"] = last_known
     _save_state(state_file, state)
@@ -99,7 +111,7 @@ def run_continuous(
     parquet_path: str,
     *,
     interval: float = 5.0,
-    batch_blocks: int = 1,
+    batch_blocks: int = 1000,
     state_file: str = DEFAULT_STATE_FILE,
     report_file: str = DEFAULT_REPORT_FILE,
     page_rows: int = 2000,
@@ -116,14 +128,14 @@ def run_continuous(
             report_file=report_file,
             batch_blocks=batch_blocks,
             page_rows=page_rows,
-            progress_cb=logger.info,
+            progress_cb=make_live_progress(),
         )
         rounds += 1
         time.sleep(interval)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Continuously scan AWS dataset")
+    parser = argparse.ArgumentParser(description="Scan AWS contract data")
     parser.add_argument(
         "dataset",
         nargs="?",
@@ -133,19 +145,44 @@ def main() -> None:
     parser.add_argument("--state-file", default=DEFAULT_STATE_FILE)
     parser.add_argument("--report-file", default=DEFAULT_REPORT_FILE)
     parser.add_argument("--interval", type=float, default=5.0)
-    parser.add_argument("--batch-blocks", type=int, default=1)
+    parser.add_argument(
+        "--batch-blocks", type=int, default=1000,
+        help="number of blocks to scan per iteration"
+    )
     parser.add_argument("--page-rows", type=int, default=2000)
+    parser.add_argument(
+        "--continuous",
+        action="store_true",
+        help="keep scanning in a loop instead of running once",
+    )
+    parser.add_argument(
+        "--max-rounds",
+        type=int,
+        default=None,
+        help="maximum number of scan iterations in continuous mode",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    run_continuous(
-        args.dataset,
-        interval=args.interval,
-        batch_blocks=args.batch_blocks,
-        state_file=args.state_file,
-        report_file=args.report_file,
-        page_rows=args.page_rows,
-    )
+    if args.continuous:
+        run_continuous(
+            args.dataset,
+            interval=args.interval,
+            batch_blocks=args.batch_blocks,
+            state_file=args.state_file,
+            report_file=args.report_file,
+            page_rows=args.page_rows,
+            max_rounds=args.max_rounds,
+        )
+    else:
+        scan_once(
+            args.dataset,
+            state_file=args.state_file,
+            report_file=args.report_file,
+            batch_blocks=args.batch_blocks,
+            page_rows=args.page_rows,
+            progress_cb=make_live_progress(),
+        )
 
 
 if __name__ == "__main__":

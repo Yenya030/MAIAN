@@ -34,6 +34,13 @@ Additional tools:
   the current `eth_blockNumber` as both start and end block.
 - `db_checker.py` scans contracts stored in a SQLite database and writes a JSON
   report to `reports/db_scan_report.json` while showing live progress.
+- `aws_scanner.py` reads contracts from the AWS Open-Data Parquet dump. It
+  processes the newest 1000 blocks by default and prints live progress. Pass
+  `--continuous` to keep scanning in a loop. Results are appended to
+  `reports/aws_scan_results.jsonl` and progress is shown on one line. Adjust the
+  block range with `--batch-blocks`. The scanner defaults to
+  `s3://aws-public-blockchain/v1.0/eth/contracts/` when no dataset path is
+  supplied.
 
 - A `Dockerfile` in the repository root can build a container with all
   dependencies installed. Build it using `docker build -t maian .`.
