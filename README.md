@@ -98,7 +98,8 @@ database, size limit and chunk size:
 python tool/contract_sqlite_descender.py --db contracts.db --size-limit 40 --page-rows 1000
 ```
 
-Use `--gui` to display the lowest processed block in a tiny curses UI.
+Progress messages are printed to the console during execution. Use `--gui`
+to display the lowest processed block in a tiny curses UI.
 
 ### Viewing Database Entries
 
