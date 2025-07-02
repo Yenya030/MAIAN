@@ -254,10 +254,9 @@ def main() -> None:
         parser.error("expected <db> or <dataset> <db>")
 
     if args.gui:
-        from sql_gui import LoaderApp
+        from sql_gui import run_terminal_app
 
-        app = LoaderApp(parquet_path, db_path, interval=args.interval)
-        app.mainloop()
+        run_terminal_app(parquet_path, db_path, interval=args.interval)
     elif args.once:
         update_contract_db(
             parquet_path,

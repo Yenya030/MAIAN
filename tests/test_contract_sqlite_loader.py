@@ -2,6 +2,8 @@ from pathlib import Path
 import sqlite3
 import threading
 import time
+import pytest
+import types
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -173,3 +175,18 @@ def test_progress_callback_invoked(tmp_path):
 
     loader.update_contract_db(str(data), str(db), progress_cb=cb)
     assert calls
+
+
+def test_gui_runs_in_terminal(tmp_path, monkeypatch):
+    data = tmp_path / "data.parquet"
+    _make_dataset(data)
+    db = tmp_path / "out.db"
+    called = {}
+
+    def fake_run(parquet: str, dbp: str, interval: float = 5.0) -> None:
+        called["args"] = (parquet, dbp, interval)
+
+    monkeypatch.setitem(sys.modules, "sql_gui", types.SimpleNamespace(run_terminal_app=fake_run))
+    monkeypatch.setattr(sys, "argv", ["contract_sqlite_loader.py", str(data), str(db), "--gui"])
+    loader.main()
+    assert called["args"] == (str(data), str(db), 5.0)

@@ -1,76 +1,87 @@
 import argparse
+import curses
+import os
+import sqlite3
 import threading
-import tkinter as tk
+import time
 from typing import Optional
 
 from contract_sqlite_loader import (
     DEFAULT_PARQUET_DATASET,
-    run_continuous_until,
-    _load_meta,
     _init_db,
+    _load_meta,
+    run_continuous_until,
 )
-import sqlite3
-import os
 
 
-class LoaderApp(tk.Tk):
+class TerminalLoaderApp:
+    """Simple curses based interface for the SQLite loader."""
+
     def __init__(self, parquet_path: str, db_path: str, interval: float = 5.0) -> None:
-        super().__init__()
         self.parquet_path = parquet_path
         self.db_path = db_path
         self.interval = interval
         self.stop_event = threading.Event()
         self.thread: Optional[threading.Thread] = None
-        self.title("SQLite Loader")
-        self.label_var = tk.StringVar(value="Starting...")
-        tk.Label(self, textvariable=self.label_var).pack(padx=10, pady=10)
-        tk.Button(self, text="Kill", command=self._kill).pack(pady=5)
-        self.protocol("WM_DELETE_WINDOW", self._kill)
-        self.after(100, self._start)
+        self.status = "Starting..."
 
     def _log(self, msg: str) -> None:
-        print(msg)
+        self.status = msg
 
-    def _start(self) -> None:
-        self.thread = threading.Thread(
-            target=run_continuous_until,
-            args=(self.parquet_path, self.db_path, self.stop_event),
-            kwargs={"interval": self.interval, "progress_cb": self._log},
-            daemon=True,
+    def _run_loader(self) -> None:
+        run_continuous_until(
+            self.parquet_path,
+            self.db_path,
+            self.stop_event,
+            interval=self.interval,
+            progress_cb=self._log,
         )
-        self.thread.start()
-        self.after(500, self._update_status)
 
-    def _update_status(self) -> None:
+    def _update_status_from_db(self) -> None:
         if os.path.exists(self.db_path):
             conn = sqlite3.connect(self.db_path)
             try:
-                _init_db(conn, int(1))  # ensure meta table exists
+                _init_db(conn, 1)
                 meta = _load_meta(conn)
             finally:
                 conn.close()
             newest = meta.get("newest_block")
             oldest = meta.get("oldest_block")
             if newest and oldest:
-                msg = f"Blocks {oldest}-{newest}"
-                self.label_var.set(msg)
-                self._log(msg)
+                self.status = f"Blocks {oldest}-{newest}"
             else:
-                msg = "Waiting for blocks..."
-                self.label_var.set(msg)
-                self._log(msg)
-        if not self.stop_event.is_set():
-            self.after(1000, self._update_status)
+                self.status = "Waiting for blocks..."
 
-    def _kill(self) -> None:
-        self.stop_event.set()
-        if self.thread is not None:
-            self.thread.join(timeout=1)
-        self.destroy()
+    def run(self, stdscr: "curses._CursesWindow") -> None:
+        stdscr.nodelay(True)
+        self.thread = threading.Thread(target=self._run_loader, daemon=True)
+        self.thread.start()
+        try:
+            while not self.stop_event.is_set():
+                self._update_status_from_db()
+                stdscr.clear()
+                stdscr.addstr(0, 0, "SQLite Loader (press q to quit)")
+                stdscr.addstr(2, 0, self.status)
+                stdscr.refresh()
+                ch = stdscr.getch()
+                if ch == ord("q"):
+                    self.stop_event.set()
+                    break
+                time.sleep(0.5)
+        finally:
+            self.stop_event.set()
+            if self.thread is not None:
+                self.thread.join(timeout=1)
+
+
+def run_terminal_app(parquet_path: str, db_path: str, interval: float = 5.0) -> None:
+    """Launch the curses based loader UI."""
+
+    curses.wrapper(lambda stdscr: TerminalLoaderApp(parquet_path, db_path, interval).run(stdscr))
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="GUI for contract_sqlite_loader")
+    parser = argparse.ArgumentParser(description="Terminal GUI for contract_sqlite_loader")
     parser.add_argument(
         "paths",
         nargs="+",
@@ -81,6 +92,7 @@ def main() -> None:
     )
     parser.add_argument("--interval", type=float, default=5.0, help="poll interval")
     args = parser.parse_args()
+
     if len(args.paths) == 1:
         parquet_path = DEFAULT_PARQUET_DATASET
         db_path = args.paths[0]
@@ -89,8 +101,7 @@ def main() -> None:
     else:
         parser.error("expected <db> or <dataset> <db>")
 
-    app = LoaderApp(parquet_path, db_path, interval=args.interval)
-    app.mainloop()
+    run_terminal_app(parquet_path, db_path, interval=args.interval)
 
 
 if __name__ == "__main__":
