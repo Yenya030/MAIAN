@@ -162,6 +162,17 @@ Add `--continuous` to keep scanning in a loop. By default the tool inspects
 moving backwards. Use `--batch-blocks` to change the range, `--interval` to
 adjust the pause between runs and `--max-rounds` to limit the number of loops.
 
+### AWS Speed Test
+
+`aws_speed.py` measures the throughput of `DataGetterAWSParquet`. It reads a
+range of blocks and reports how many contracts and bytes were downloaded along
+with the elapsed time and average MB/s.
+
+```bash
+python tool/aws_speed.py              # use default dataset
+python tool/aws_speed.py s3://bucket/path --blocks 5000
+```
+
 ## Installation
 
 Maian requires Python 3.8 or newer. Install the Python dependencies using:
