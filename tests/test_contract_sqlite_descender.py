@@ -33,6 +33,22 @@ def test_update_contract_db_reverse_basic(tmp_path):
     assert meta['lowest_block'] == '0'
 
 
+def test_update_contract_db_reverse_progress_cb(tmp_path):
+    data = tmp_path / 'data.parquet'
+    _make_dataset(data)
+    db = tmp_path / 'out.db'
+    calls: list[str] = []
+
+    desc.update_contract_db_reverse(
+        str(db),
+        size_limit_mb=1,
+        parquet_path=str(data),
+        page_rows=2,
+        progress_cb=calls.append,
+    )
+    assert calls
+
+
 def test_cli_gui_invoked(tmp_path, monkeypatch):
     data = tmp_path / 'data.parquet'
     _make_dataset(data)
@@ -42,12 +58,15 @@ def test_cli_gui_invoked(tmp_path, monkeypatch):
 
     def dummy_run(*args, **kwargs):
         called['run'] = args
+        called['kwargs'] = kwargs
 
     class DummyGUI:
         def __init__(self, *args, **kwargs):
             called['gui_init'] = args
         def run(self):
             called['gui_run'] = True
+        def _log(self, msg):
+            called['log'] = msg
 
     monkeypatch.setattr(desc, 'run', dummy_run)
     monkeypatch.setattr(desc, 'SimpleGUI', DummyGUI)
@@ -60,4 +79,5 @@ def test_cli_gui_invoked(tmp_path, monkeypatch):
     assert called['gui_run']
     assert called['run'][0] == desc.DEFAULT_PARQUET_DATASET
     assert called['run'][4] == desc.DEFAULT_PAGE_ROWS
+    assert called['kwargs']['progress_cb']
 
