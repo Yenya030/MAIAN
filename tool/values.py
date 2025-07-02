@@ -49,6 +49,12 @@ def print_params():
         print('%20s : %s' % (s, str(MyGlobals.st[s])))
 
 
+def vprint(*args, **kwargs):
+    """Print only when verbose mode is enabled."""
+    if MyGlobals.verbose:
+        print(*args, **kwargs)
+
+
 
 def create_configuration( stack, mmemory, storage):
     
@@ -155,6 +161,7 @@ class MyGlobals(object):
     read_from_blockchain = False
     checktype = 0
     exec_as_script = False
+    verbose = False
 
 
 

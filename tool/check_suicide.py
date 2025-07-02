@@ -1,6 +1,14 @@
 from __future__ import print_function
 from parse_code import *
-from values import get_params, set_params, initialize_params, print_params, MyGlobals, clear_globals
+from values import (
+    get_params,
+    set_params,
+    initialize_params,
+    print_params,
+    MyGlobals,
+    clear_globals,
+    vprint,
+)
 from execute_block import *  
 from blockchain import *
 
@@ -18,7 +26,7 @@ def ether_suicide( op, stack, trace, debug ):
 def run_one_check( max_call_depth, ops, contract_address, debug, read_from_blockchain ):
 
 
-    print('\n[ ]\033[1m Search with call depth: %d   : \033[0m' % (max_call_depth) , end = '')
+    vprint('\n[ ]\033[1m Search with call depth: %d   : \033[0m' % (max_call_depth), end='')
 
 
     initialize_params(read_from_blockchain, contract_address )
@@ -41,19 +49,19 @@ def run_one_check( max_call_depth, ops, contract_address, debug, read_from_block
 
 def check_one_contract_on_suicide(contract_bytecode, contract_address, debug, read_from_blockchain, confirm_exploit=False, fhashes=[] ):
 
-    print('\033[94m[ ] Check if contract is SUICIDAL\033[0m\n')
-    print('[ ] Contract address   : %s' % contract_address)
-    print('[ ] Contract bytecode  : %s...' % contract_bytecode[:50])
-    print('[ ] Bytecode length    : %d' % len(contract_bytecode) )
-    print('[ ] Blockchain contract: %s' % confirm_exploit)
-    print('[ ] Debug              : %s' % debug)
+    vprint('\033[94m[ ] Check if contract is SUICIDAL\033[0m\n')
+    vprint('[ ] Contract address   : %s' % contract_address)
+    vprint('[ ] Contract bytecode  : %s...' % contract_bytecode[:50])
+    vprint('[ ] Bytecode length    : %d' % len(contract_bytecode))
+    vprint('[ ] Blockchain contract: %s' % confirm_exploit)
+    vprint('[ ] Debug              : %s' % debug)
 
 
 
     ops = parse_code( contract_bytecode, debug )
     if not code_has_instruction( ops, ['SUICIDE']) :
         #if debug: 
-        print('\n\033[92m[-] The code does not contain SUICIDE instructions, hence it is not vulnerable\033[0m')
+        vprint('\n\033[92m[-] The code does not contain SUICIDE instructions, hence it is not vulnerable\033[0m')
         return False
     if debug: print_code( contract_bytecode, ops )
 
@@ -74,25 +82,25 @@ def check_one_contract_on_suicide(contract_bytecode, contract_address, debug, re
 
     if MyGlobals.stop_search:
 
-        print('\n\n\033[91m[-] Suicidal vulnerability found! \033[0m\n\n    The following %d transaction(s) will trigger the contract to be killed:' % MyGlobals.no_function_calls )
+        vprint('\n\n\033[91m[-] Suicidal vulnerability found! \033[0m\n\n    The following %d transaction(s) will trigger the contract to be killed:' % MyGlobals.no_function_calls)
 
         for n in range(MyGlobals.no_function_calls):
-            print('    -Tx[%d] :' % (n+1), end='' ) 
+            vprint('    -Tx[%d] :' % (n+1), end='')
             for j in range(len(MyGlobals.function_calls[n+1]['input'] )):
-                if (j-8) % 64 == 0: print(' ',end='')
-                print('%s' % MyGlobals.function_calls[n+1]['input'][j], end='')
-            print('') 
+                if (j-8) % 64 == 0: vprint(' ', end='')
+                vprint('%s' % MyGlobals.function_calls[n+1]['input'][j], end='')
+            vprint('')
 
         if len(fhashes) > 0:
-            print('\n    The transactions correspond to the functions:')
+            vprint('\n    The transactions correspond to the functions:')
             for n in range(MyGlobals.no_function_calls):
                 if MyGlobals.function_calls[n+1]['input'][:8] in fhashes:
-                    print('    -'+fhashes[ MyGlobals.function_calls[n+1]['input'][:8] ])
-            print()
+                    vprint('    -'+fhashes[ MyGlobals.function_calls[n+1]['input'][:8] ])
+            vprint()
 
         if confirm_exploit:
             
-            print('\033[1m[ ] Confirming suicide vulnerability on private chain ... \033[0m', end='' )
+            vprint('\033[1m[ ] Confirming suicide vulnerability on private chain ... \033[0m', end='')
 
 
             txs = []
@@ -111,17 +119,17 @@ def check_one_contract_on_suicide(contract_bytecode, contract_address, debug, re
 
             bcod = MyGlobals.web3.eth.getCode(contract_address)
             if len(bcod) <= 2:
-                print('\n    \033[1m\033[91mConfirmed ! The contract is suicidal !\033[0m')
+                vprint('\n    \033[1m\033[91mConfirmed ! The contract is suicidal !\033[0m')
             else:
-                print('\033[94m    Cannot confirm the suicide vulnerability \033[0m')
+                vprint('\033[94m    Cannot confirm the suicide vulnerability \033[0m')
                 
         else:
-            print('\033[94m[-] Cannot confirm the bug because the contract is not deployed on the blockchain.\033[0m')
+            vprint('\033[94m[-] Cannot confirm the bug because the contract is not deployed on the blockchain.\033[0m')
 
         return True
 
 
-    print('\n\033[92m[-] No suicidal vulnerability found \033[0m')
+    vprint('\n\033[92m[-] No suicidal vulnerability found \033[0m')
 
 
     return False

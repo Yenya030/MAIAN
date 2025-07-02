@@ -8,7 +8,7 @@ from web3 import Web3
 from check_suicide import check_one_contract_on_suicide
 from check_leak import check_one_contract_on_ether_leak
 from check_lock import check_one_contract_on_ether_lock
-from values import MyGlobals
+from values import MyGlobals, vprint
 
 
 NETWORK_PROVIDERS = {
@@ -189,7 +189,13 @@ if __name__ == '__main__':
         '--allow-duplicates', action='store_true',
         help='allow scanning the same address more than once'
     )
+    parser.add_argument(
+        '--verbose', action='store_true',
+        help='print progress information'
+    )
     args = parser.parse_args()
+
+    MyGlobals.verbose = args.verbose
 
     reports = scan_multiple_contracts(
         count=args.count,
@@ -199,6 +205,6 @@ if __name__ == '__main__':
         report_dir=args.report_dir,
     )
     for i, rep in enumerate(reports, 1):
-        print(f'Scan {i}:')
+        vprint(f'Scan {i}:')
         for k, v in rep.items():
-            print(f'  {k}: {v}')
+            vprint(f'  {k}: {v}')
