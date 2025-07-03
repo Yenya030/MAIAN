@@ -121,6 +121,17 @@ contract.
 python tool/db_checker.py --db contracts.db --limit 10
 ```
 
+### Database Leak Scanner
+
+Unchecked contracts can be tested for prodigal leaks with
+`db_leak_scanner.py`. Provide the source database via `--src-db` and a
+destination database for vulnerable contracts with `--dst-db`. Each processed
+row is marked as checked.
+
+```bash
+python tool/db_leak_scanner.py --src-db contracts.db --dst-db leaks.db
+```
+
 
 ### Using AWS Open Data
 
