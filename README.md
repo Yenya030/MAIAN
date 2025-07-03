@@ -183,6 +183,21 @@ custom table name via `--dataset`.
 python tool/bigquery_contracts.py --start-block 1000000 --end-block 1000100
 ```
 
+### Java BigQuery Scanner
+
+`java_bigquery_scanner.py` uses a small Java helper to query the same dataset
+and immediately run Maian's checks on the downloaded contracts. Compile the
+helper and run the scanner like so:
+
+```bash
+javac tool/java/BigQueryFetcher.java
+python tool/java_bigquery_scanner.py --start-block 1000000 --end-block 1000100 --jar-path tool/java
+```
+
+The script stores the fetched contracts in
+`contracts/java_bigquery_contracts.jsonl` and prints a JSON report for each
+entry.
+
 ## Installation
 
 Maian requires Python 3.8 or newer. Install the Python dependencies using:
